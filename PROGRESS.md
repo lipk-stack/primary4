@@ -68,6 +68,20 @@
 - **验证**：Node 脚本校验——36/36 单元教学卡齐全且结构完整、选项无重复（保证答案重定位正确）、答案下标全部合法、JS 语法通过、所有 `$()` 引用的元素 ID 均存在。
 - Commit: 见本分支 `claude/keen-mccarthy-lio7d7`
 
+### ⚠️ 分发说明（Google Drive 上传限制 — 重要，供后续迭代参考）
+- 应用已增长到 **98 KB**，超过了 Drive MCP `create_file` 单次调用可内联传入的内容上限（约 25–32K tokens）。
+  迭代 1（30 KB）能成功上传，是因为当时体积小、以纯文本形式正好在上限内；如今已超限。
+- Drive MCP **只支持把内容作为内联参数传入**（无“从路径上传”），且**没有 delete / 更新内容**工具；
+  bash 中也没有 `rclone`/`gdrive`/`gcloud`，OAuth token 未暴露给 shell —— 因此本轮**无法由程序自动上传到 Drive**。
+- 已生成 **`dist.html`（44.5 KB 自解压单文件）**：内嵌 gzip 压缩后的完整游戏，浏览器端用
+  `DecompressionStream('gzip')` 解压运行（Safari 16.4+/Chrome/Edge 支持），同样**离线、单文件、可直接玩**。
+  Node 校验：解压后与 `index.html` **逐字节一致**。即便如此，44.5 KB（≈42K tokens）仍超过内联上限，无法自动上传。
+- **本轮 PrimaryApp 文件夹遗留 2 个被截断的损坏文件需手动删除**（MCP 无删除工具）：
+  `1KdF6CWim8e5cbWaSG8SJypJVwUfDPFqk`、`1rQ3HGiNdKrCLlO7xNtP8mhnkTMCtWU2w`。
+- **可行的分发方式（任选其一）**：
+  1. 从 GitHub 仓库下载 `index.html`（或更小的 `dist.html`），手动拖入 Google Drive `PrimaryApp` 文件夹。
+  2. 为环境配置真正的上传通道（rclone / 服务账号 / 在 env 注入 Drive API token），后续即可自动上传。
+
 ## 待办 / 下一步 (Backlog — for Iteration 4+)
 1. **扩充题量**：每单元加至 8~10 题（目前 2~4 题），配合随机抽题更有挑战。
 2. **难度分级**：每单元分初级/中级/挑战级，逐步解锁。
