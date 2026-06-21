@@ -97,6 +97,14 @@
   .pop{position:fixed; left:50%; top:30%; transform:translate(-50%,-50%) scale(.6); font-size:80px; opacity:0; pointer-events:none; z-index:50; transition:transform .4s cubic-bezier(0.175, 0.885, 0.32, 1.275), opacity .4s;}
   .pop.show{opacity:1; transform:translate(-50%,-50%) scale(1);}
 
+  /* 学一学 教学卡 */
+  .lesson-intro{font-size:16px; line-height:1.7; color:#34495e; margin:0 0 14px;}
+  .lesson-pt{display:flex; gap:10px; align-items:flex-start; background:var(--soft); border-radius:14px; padding:12px 14px; margin-bottom:10px;}
+  .lesson-pt .n{flex:none; width:26px; height:26px; border-radius:50%; background:linear-gradient(135deg,var(--accent),#2980b9); color:#fff; font-weight:800; display:flex; align-items:center; justify-content:center; font-size:14px;}
+  .lesson-pt .x{font-size:15px; line-height:1.6; color:#34495e;}
+  .lesson-eg{background:#fff9e8; border-left:5px solid var(--gold); border-radius:10px; padding:12px 14px; margin-top:6px; font-size:15px; line-height:1.7; color:#7a5c10;}
+  .lesson-eg b{color:#2c3e50;}
+
   /* 年级选择页 */
   .grade-btn{margin-bottom:16px; padding:22px; font-size:20px; display:flex; flex-direction:column; align-items:center; gap:6px; border-radius:22px; text-shadow:none;}
   .grade-btn span{font-size:13px; font-weight:400; opacity:0.9;}
@@ -162,6 +170,22 @@
     <div class="grid" id="topicGrid"></div>
   </section>
 
+  <!-- ===== 学一学（教学卡）===== -->
+  <section id="lesson" class="screen">
+    <div class="hud">
+      <span class="pill" id="lessonBack" style="cursor:pointer">⬅ 返回单元</span>
+      <span class="grow"></span>
+      <span class="pill">⭐ <b id="lStars">0</b></span>
+    </div>
+    <h1 id="lessonTitle" style="font-size:26px">📘 学一学</h1>
+    <p class="sub">先看懂老师的讲解，再去闯关会更容易拿星星哦！</p>
+    <div class="card" id="lessonBody"></div>
+    <button class="btn primary" id="lessonStart" style="margin-top:4px;">我学会了，开始挑战 🚀</button>
+    <div class="footnote" style="color:#a9c2f0; text-shadow:none;">
+      看不懂没关系，闯关时每一题都还有详细讲解陪着你！
+    </div>
+  </section>
+
   <!-- ===== 答题 ===== -->
   <section id="quiz" class="screen">
     <div class="qtop">
@@ -190,9 +214,9 @@
       
       <!-- 奖励关卡激活卡片 -->
       <div id="bonusUnlockCard" style="display:none; margin: 18px 0; padding:16px; border:2px dashed var(--gold); border-radius:18px; background:linear-gradient(180deg, #fffcf0, #fff7d6); animation: pulse 2s infinite;">
-        <h3 style="color:#e67e22; margin:0 0 6px 0; font-size:18px;">🛸 发现宇宙时空裂缝！</h3>
-        <p style="font-size:14px; margin:0 0 12px 0; color:#666;">你达成了成就，解锁了 <b>宇宙星空漫游</b> 奖励关卡！有几率获得额外星星！</p>
-        <button class="btn primary" id="rGameBtn" style="background: linear-gradient(135deg, #f39c12, #e67e22);">🛸 进入太空漫游 🛸</button>
+        <h3 style="color:#e67e22; margin:0 0 6px 0; font-size:18px;">🎁 发现神秘奖励裂缝！</h3>
+        <p style="font-size:14px; margin:0 0 12px 0; color:#666;">你达成了成就，解锁了 <b>随机奖励小游戏</b>！可能是 🛸 宇宙星空漫游，也可能是 ⚡ 闪电心算——每次都不一样，有机会赢额外星星！</p>
+        <button class="btn primary" id="rGameBtn" style="background: linear-gradient(135deg, #f39c12, #e67e22);">🎁 抽取奖励游戏 🎁</button>
       </div>
 
       <div class="row" style="margin-top:18px;">
@@ -220,6 +244,27 @@
     </div>
     <div class="footnote" style="color:#a9c2f0; text-shadow: none; margin-top: 8px;">
       操作方法：在屏幕上左右拖动或直接点击两边，控制熊猫 🐼 移动。
+    </div>
+  </section>
+
+  <!-- ===== 闪电心算 迷你游戏 ===== -->
+  <section id="math-screen" class="screen">
+    <div class="qtop" style="margin-bottom:8px;">
+      <span class="pill">⏱️ <b id="mathTimer">20</b>秒</span>
+      <span class="pill" style="background:var(--accent);">目标: <b id="mathTarget">?</b></span>
+      <span class="pill" style="background:var(--gold); color:#000;">⭐ <b id="mathStars">0</b></span>
+    </div>
+    <div class="card" style="position:relative; overflow:hidden; padding:0; height:380px; background:#0a1430; border:3px solid var(--gold); border-radius:24px; box-shadow:0 0 20px rgba(241,196,15,0.4);">
+      <canvas id="mathCanvas" style="display:block; width:100%; height:100%;"></canvas>
+      <div id="mathStartOverlay" style="position:absolute; inset:0; background:rgba(10,10,30,0.9); display:flex; flex-direction:column; justify-content:center; align-items:center; color:#fff; text-align:center; padding:20px; backdrop-filter:blur(3px);">
+        <h2 style="color:var(--gold); margin-top:0; font-size:26px; font-weight:800; letter-spacing:1px;">⚡ 闪电心算 ⚡</h2>
+        <div style="background:var(--accent); border-radius:20px; padding:4px 14px; font-weight:700; font-size:14px; margin-bottom:12px;">点中正确答案的泡泡</div>
+        <p style="font-size:14px; margin:0 0 22px; max-width:85%; line-height:1.6; color:#ddd;">屏幕上方出现一道算式，点击飘动的泡泡里<b>正确的答案</b>得星星；点错会扣分，要看清楚哦！</p>
+        <button class="btn primary" id="mathStartBtn" style="max-width:220px; background:linear-gradient(135deg,#f1c40f,#f39c12);">开始心算 ⚡</button>
+      </div>
+    </div>
+    <div class="footnote" style="color:#a9c2f0; text-shadow:none; margin-top:8px;">
+      操作方法：用手指或鼠标点击答对的数字泡泡。算得越快、答对越多，星星越多！
     </div>
   </section>
 
@@ -574,6 +619,123 @@ const SYLLABUS = {
 };
 
 /* ============================================================
+   学一学 教学卡 (LESSONS) — key: "grade.subject.topic"
+   每张卡含：导入(intro) + 知识要点(points) + 例子(eg)
+   ============================================================ */
+const LESSONS = {
+  // ---------- 三年级 ----------
+  "std3.math.numbers": { intro:"“万以内的数”就是从 1 到 9999 这些数。学会读、写和比较它们，是数学的基本功！",
+    points:["数位顺序：从右边数起是 个位、十位、百位、千位。","哪一位上的数字，就代表那个数位的“几”。例：3 个百写成 300。","读数时遇到中间的 0 要读出来，但末尾连续的 0 不读，如 6 027 读“六千零二十七”。"],
+    eg:"<b>例：</b>数 4 583 → 千位是 4(四千)、百位是 5(五百)、十位是 8(八十)、个位是 3。读作“四千五百八十三”。" },
+  "std3.math.fraction": { intro:"把一个东西平均分成几份，每份就是一个“分数”。分数也可以写成“小数”。",
+    points:["分数 = 分子／分母。分母是平均分成的总份数，分子是取的份数。","分子比分母小 → 真分数（不够一个整体）。","十分之几就写成小数零点几：3/10 = 0.3；比较小数从十分位开始比大小。"],
+    eg:"<b>例：</b>一块饼分成 5 份吃了 2 份 = 2/5。把 7/10 写成小数就是 0.7。" },
+  "std3.math.measure": { intro:"度量衡是用来量长度、容量、重量的单位。记住单位之间的换算最重要！",
+    points:["长度：1 米(m) = 100 厘米(cm)。","容量：1 升(L) = 1000 毫升(mL)。","大单位换小单位要“乘”，小单位换大单位要“除”。"],
+    eg:"<b>例：</b>2 米 5 厘米 = 200 + 5 = 205 厘米；3 升 = 3 × 1000 = 3000 毫升。" },
+  "std3.chinese.liangci": { intro:"量词是用来数东西的词，如“一本书、一只猫”。不同的东西要配不同的量词。",
+    points:["能用手握的器具多用“把”：一把伞、一把钥匙。","圆圆的小东西用“颗”或“粒”：一颗珍珠、一粒米。","动物各有专用量词：一匹马、一头牛、一条鱼、一只鸟。"],
+    eg:"<b>例：</b>一(把)雨伞、一(颗)星星、一(条)鱼。配对正确，句子才通顺。" },
+  "std3.chinese.chengyu": { intro:"成语是四个字的固定词语，背后常藏着一个故事和道理，能让句子更有文采。",
+    points:["成语多由故事来：守株待兔 → 妄想不劳而获。","理解成语要懂它“比喻”的意思，不能只看字面。","自相矛盾：矛是进攻的武器，盾是防守的，比喻说话前后不一致。"],
+    eg:"<b>例：</b>“画蛇添足”——蛇本无脚却画上脚，比喻做了多余的事反而坏事。" },
+  "std3.chinese.grammar": { intro:"关联词是把两个句子连起来的词，让我们看出句子之间的关系。",
+    points:["假设关系：如果……就……（下雨了，就取消野餐）。","递进关系：不但……而且……（会唱歌，还会跳舞）。","因果关系：因为……所以……；转折关系：虽然……但是……。"],
+    eg:"<b>例：</b>她<b>不但</b>聪明，<b>而且</b>很努力。前后是“更进一步”的递进关系。" },
+  "std3.science.teeth": { intro:"牙齿帮我们咬碎食物。人一生有两套牙齿，不同形状的牙齿有不同的工作。",
+    points:["乳牙先长会脱落，恒牙长出来陪伴一生。","门齿(切断)、犬齿(撕裂)、臼齿(磨碎)，各司其职。","要早晚刷牙、少吃糖，保护牙齿不蛀牙。"],
+    eg:"<b>例：</b>吃苹果时，前面的门齿先咬断，旁边尖尖的犬齿撕开，后面的臼齿磨碎。" },
+  "std3.science.diet": { intro:"动物按照吃什么分成三类。看它吃肉还是吃草，就知道它的“食性”。",
+    points:["肉食性：只吃别的动物，如老虎、狮子。","草食性：只吃植物，如牛、兔子。","杂食性：又吃肉又吃植物，如鸡、熊、人类。"],
+    eg:"<b>例：</b>鸡会啄米和草，也会吃小虫，所以是杂食性动物。" },
+  "std3.science.magnet": { intro:"磁铁能吸住铁制的东西，还有南极(S)和北极(N)。它有有趣的吸引和排斥规律。",
+    points:["磁铁只吸铁、镍、钴；不吸塑料、木头、玻璃。","同极相斥(N对N推开)，异极相吸(N对S吸住)。","磁铁两端磁力最强，叫磁极。"],
+    eg:"<b>例：</b>铁钉能被磁铁吸住；两块磁铁的 N 极靠近会互相推开。" },
+  "std3.bm.katanama": { intro:"Kata Nama ialah perkataan yang menamakan orang, haiwan, tempat atau benda.",
+    points:["Kata Nama Am: umum, contoh — sekolah, kucing, buku.","Kata Nama Khas: nama khusus, ditulis huruf besar — Ali, Kuala Lumpur, SJKC Yuk Chai.","Tanya diri: 'Ini nama apa?' Kalau nama khusus → huruf besar."],
+    eg:"<b>Contoh:</b> 'budak' (am) tetapi 'Ahmad' (khas, huruf besar)." },
+  "std3.bm.penjodoh": { intro:"Penjodoh Bilangan ialah perkataan yang menyertai bilangan dan benda.",
+    points:["seekor (haiwan), sebatang (benda panjang), sebuah (besar/kenderaan).","Pisang sebaris = sesikat; bertangkai banyak = setandan.","Benda berpasangan = sepasang (kasut, subang)."],
+    eg:"<b>Contoh:</b> dua <b>ekor</b> ayam, tiga <b>buah</b> rumah, se<b>sikat</b> pisang." },
+  "std3.english.grammar": { intro:"In a sentence, the verb must match the subject. This is called subject–verb agreement.",
+    points:["Singular subject (he/she/it) + verb with -s: She plays.","Plural subject (they/the boys) + verb without -s: They play.","He/She/It uses 'does', I/You/We/They use 'do'."],
+    eg:"<b>Example:</b> The boys <b>play</b> (plural). She <b>does</b> her homework (singular)." },
+  "std3.english.vocab": { intro:"Vocabulary means learning new words — what they mean and their opposites (antonyms).",
+    points:["A person's job is often named by what they do: a pilot flies planes.","Antonyms are opposite words: heavy ↔ light, big ↔ small.","Learn words in pairs and use them in sentences to remember."],
+    eg:"<b>Example:</b> The opposite of 'heavy' is 'light'. A person who flies a plane is a 'pilot'." },
+  // ---------- 四年级 ----------
+  "std4.math.place": { intro:"四年级的数变大了——“十万以内的数”最大到 99 999。数位多了万位和十万位。",
+    points:["数位从右到左：个、十、百、千、万、十万。","每个数字所在的数位决定它的大小，如 5 在千位 = 5000。","比大小从最高位(左边)开始比；凑整看后一位，≥5 进一、<5 舍去。"],
+    eg:"<b>例：</b>35 814 中 5 在千位代表 5000；48 250 凑整到千 → 看百位 2(<5) 舍去 = 48 000。" },
+  "std4.math.addsub": { intro:"加法是合起来，减法是去掉或比较。位数大了，关键是“进位”和“借位”。",
+    points:["加法：同一数位对齐相加，满十向前一位进 1。","减法：不够减时向前一位借 1 当 10。","“还剩、相差、少多少” → 用减法；“一共、合计” → 用加法。"],
+    eg:"<b>例：</b>3450 + 2680：十位 5+8=13 写 3 进 1……结果 6130。8000 − 3650 = 4350。" },
+  "std4.math.multiply": { intro:"乘法是“几个相同的数加在一起”的快捷算法，用乘法口诀又快又准。",
+    points:["竖式乘法：先乘个位再乘十位，进位要加上去。","×10 在后面添一个 0，×100 添两个 0。","“每…共…”表示把份数乘起来。"],
+    eg:"<b>例：</b>24 × 6：4×6=24 写 4 进 2；2×6=12+2=14 → 144。36 × 10 = 360。" },
+  "std4.math.divide": { intro:"除法是把总数平均分成几份，或看里面有几个几。有时会分不尽，剩下“余数”。",
+    points:["除法是乘法的逆运算，可用乘法验算。","余数一定要比除数小，否则还能再分。","“平均分、每份多少” → 用除法。"],
+    eg:"<b>例：</b>45 ÷ 7：7×6=42 最接近，45−42=3 → 每份 6，余 3。验算 6×7+3=45。" },
+  "std4.math.fraction": { intro:"分数表示整体的一部分。四年级要会比较分数大小、做同分母的加减。",
+    points:["分数 = 取的份数 ÷ 总份数。","同分子比大小：分母越小，每份越大(1/2 > 1/3)。","同分母加减：分母不变，只把分子加减。"],
+    eg:"<b>例：</b>比萨切 8 块吃 3 块 = 3/8；2/5 + 1/5 = 3/5(分母不变)。" },
+  "std4.math.money": { intro:"钱币计算就是 令吉(RM) 和 仙(sen) 的加减。买东西、找钱都用得上！",
+    points:["100 仙 = RM 1，满 100 仙要进位成 1 令吉。","加钱用加法，找钱(找回)用减法。","对齐小数点再算，别把令吉和仙加错位。"],
+    eg:"<b>例：</b>RM5.60 + RM2.75：仙 60+75=135=RM1.35，共 RM8.35。付 RM20 买 RM13.50 → 找 RM6.50。" },
+  "std4.math.time": { intro:"时间的单位特别——满 60 才进位，不是满 10！要学会换算和计算经过的时间。",
+    points:["1 小时 = 60 分钟，1 分钟 = 60 秒。","求经过时间：先算整小时，再加零头的分钟。","分钟相加满 60 进位成 1 小时。"],
+    eg:"<b>例：</b>2 小时 30 分 = 120+30 = 150 分钟。7:45 + 1 小时 30 分 = 9:15。" },
+  "std4.math.measure": { intro:"度量衡考的是单位换算。记牢“1 大 = 多少小”，换算就不会错。",
+    points:["长度：1 m = 100 cm；重量：1 kg = 1000 g。","大单位换小单位要乘换算率。","算式里单位要统一，才能相加减。"],
+    eg:"<b>例：</b>3 米 = 3×100 = 300 厘米；2 千克 500 克 = 2000+500 = 2500 克。" },
+  "std4.chinese.liangci": { intro:"四年级的量词更细致。同一类东西，形状不同量词也不同，要用得准确。",
+    points:["长条状的东西用“条”：一条裤子、一条河、一条路。","上衣用“件”，裤裙用“条”，别配错。","薄薄的平面用“张”：一张纸、一张报纸。"],
+    eg:"<b>例：</b>一(匹)马、一(张)报纸、一(条)裤子。" },
+  "std4.chinese.chengyu": { intro:"成语是华文的精华。要懂意思，也要会找它的近义、反义成语。",
+    points:["一心一意(专心) ↔ 三心二意(不专心)。","看关键字猜意思：“小心翼翼”就是非常小心。","成语常含道理：画蛇添足 = 多此一举反坏事。"],
+    eg:"<b>例：</b>“一心一意”的近义词是“专心致志”，反义词是“三心二意”。" },
+  "std4.chinese.fanyi": { intro:"反义词就是意思完全相反的两个词，掌握它能让你的表达更丰富。",
+    points:["想象画面找相反：宽 ↔ 窄、高 ↔ 矮。","勤劳 ↔ 懒惰、宽阔 ↔ 狭窄。","形容词最常考反义词。"],
+    eg:"<b>例：</b>“勤劳”的反义词是“懒惰”；“宽阔”的反义词是“狭窄”。" },
+  "std4.chinese.jinyi": { intro:"近义词是意思相近、可以互相替换的词。它能帮我们换词不换意。",
+    points:["美丽 ≈ 漂亮；高兴 ≈ 快乐。","替换后句子意思不变，就是近义词。","近义词之间也有细微差别，要看用在哪里。"],
+    eg:"<b>例：</b>“美丽”的近义词是“漂亮”；“高兴”的近义词是“快乐”。" },
+  "std4.chinese.biaodian": { intro:"标点符号是句子的“表情”。用对标点，别人才看得懂你的语气。",
+    points:["句末：陈述用句号。、疑问用问号？、感叹用叹号！","句子中间没说完的停顿用逗号，。","“哇、啊”等语气词后常用叹号表达感情。"],
+    eg:"<b>例：</b>“你叫什么名字？”(问句用？)　“哇！这里真美丽！”(感叹用！)" },
+  "std4.chinese.bushou": { intro:"部首是汉字的“家族标志”。同一部首的字，意思常常相关，还能帮你查字典。",
+    points:["氵(三点水) → 和水有关：江、河、湖、海。","木字旁 → 和树木有关：树、林、桥、椅。","认部首能猜出生字的大概意思。"],
+    eg:"<b>例：</b>“江、河、湖、海”都带氵，所以都和水有关。" },
+  "std4.science.needs": { intro:"所有生物都要靠一些基本东西才能活下去。植物还会自己制造食物，很神奇！",
+    points:["生存三宝：空气、水、食物，缺一不可。","绿色植物靠“光合作用”自己造食物。","光合作用：阳光 + 水 + 二氧化碳 → 食物 + 氧气。"],
+    eg:"<b>例：</b>玩具不是生存必需；植物在阳光下用光合作用制造养分。" },
+  "std4.science.animal": { intro:"动物的世界丰富多彩。它们用不同方式呼吸、成长，适应各自的环境。",
+    points:["鱼用鳃呼吸，陆地动物多用肺。","有些动物成长会“变态”：蝌蚪 → 青蛙，身体大变样。","观察动物特征能帮我们分类。"],
+    eg:"<b>例：</b>青蛙小时候是蝌蚪用鳃呼吸，长大用肺，这种大变身叫变态。" },
+  "std4.science.matter": { intro:"我们身边的东西分固态、液态、气态三种状态，遇冷遇热可以互相变化。",
+    points:["三态：固体(有形状)、液体(会流动)、气体(看不见)。","水遇冷结冰(液→固)，受热蒸发成水蒸气(液→气)。","状态改变是物理变化，物质本身没变。"],
+    eg:"<b>例：</b>湿衣服晾干，是水蒸发变成水蒸气飞走了。" },
+  "std4.bm.katanama": { intro:"Tatabahasa: Kata Nama Khas mesti huruf besar; Kata Kerja Transitif perlu objek.",
+    points:["Kata Nama Khas: nama khusus, semua huruf besar — SJKC Chong Hwa.","Kata Kerja Transitif: ada imbuhan 'meN-' dan perlu objek (membaca buku).","Kata Kerja Tak Transitif tidak perlu objek (berlari)."],
+    eg:"<b>Contoh:</b> 'Adik <b>membaca</b> buku.' — membaca (kata kerja transitif), buku (objek)." },
+  "std4.bm.simpulan": { intro:"Simpulan Bahasa ialah ungkapan dua perkataan yang membawa maksud tersirat.",
+    points:["Maksudnya bukan makna asal perkataan — perlu dihafal.","'anak emas' = orang yang paling disayangi.","'kaki bangku' = tidak pandai bermain sukan."],
+    eg:"<b>Contoh:</b> 'Dia anak emas guru besar.' bermaksud dia paling disayangi." },
+  "std4.english.grammar": { intro:"Grammar this year: the Simple Past Tense and prepositions of place.",
+    points:["Past tense shows finished actions: go → went, eat → ate, play → played.","Time words like 'yesterday', 'last week' signal the past tense.","Prepositions show position: under, on, in, between, over."],
+    eg:"<b>Example:</b> 'They <b>went</b> to the beach yesterday.' 'The cat sleeps <b>under</b> the table.'" },
+  "std4.english.vocab": { intro:"Vocabulary: synonyms (same meaning) and homophones (same sound, different word).",
+    points:["Synonym = similar meaning: happy ≈ cheerful.","Antonym = opposite meaning: happy ↔ sad.","Homophones sound the same but are spelt differently: read / red, see / sea."],
+    eg:"<b>Example:</b> 'cheerful' is a synonym of 'happy'. 'read' and 'red' are homophones." },
+  "std4.history.sejarahdiri": { intro:"历史让我们认识过去。学历史要会分辨“第一手资料”和“第二手资料”。",
+    points:["第一手资料(初级)：原始记录，如日记、出土文物、官方文件。","第二手资料(次级)：别人整理过的，如历史书、论文、报道。","学历史能吸取教训、珍惜现在、培养爱国心。"],
+    eg:"<b>例：</b>古人留下的日记和出土文物是第一手资料；后人写的历史书是第二手资料。" },
+  "std4.history.zaman": { intro:"很久很久以前的“冰河时代”和“石器时代”，是人类历史的开端。",
+    points:["冰河时代末期气温上升，冰川融化，海平面上升。","石器时代的人用石头打磨成工具。","后来才进入青铜器时代、铁器时代。"],
+    eg:"<b>例：</b>石器时代用石头做工具；冰河末期天气变暖、冰川融化。" }
+};
+
+/* ============================================================
    游戏状态 + 存档 (localStorage)
    ============================================================ */
 const SAVE_KEY = "xingxing_v2";
@@ -870,19 +1032,55 @@ function openSubject(key){
       <div class="t">${t.name}</div>
       <div class="pg">${star ? "⭐".repeat(star) : "未完成"}</div>
       ${completed ? '<div style="font-size:11px; color:#2ecc71; margin-top:4px; font-weight:700;">★ 锁定 (不可重刷星星)</div>' : '<div style="font-size:11px; color:#e67e22; margin-top:4px; font-weight:700;">★ 首次挑战可得星</div>'}`;
-    div.onclick=()=>startQuiz(key,tk);
+    div.onclick=()=>openLesson(key,tk);
     g.appendChild(div);
   }
-  refreshHud(); 
+  refreshHud();
   show("topics");
 }
 
 /* ============================================================
+   学一学 教学卡逻辑
+   ============================================================ */
+function openLesson(sk,tk){
+  curSubj=sk; curTopic=tk;
+  const subj=SYLLABUS[save.grade].subjects[sk];
+  const topic=subj.topics[tk];
+  const lesson=LESSONS[`${save.grade}.${sk}.${tk}`];
+  $("lStars").textContent=save.stars;
+  $("lessonTitle").textContent=`${topic.icon} ${topic.name} · 学一学`;
+
+  if(!lesson){ startQuiz(sk,tk); return; }   // 没有教学卡就直接闯关
+
+  $("lessonBody").innerHTML =
+    `<p class="lesson-intro">${lesson.intro}</p>`
+    + lesson.points.map((p,i)=>`<div class="lesson-pt"><span class="n">${i+1}</span><span class="x">${p}</span></div>`).join("")
+    + `<div class="lesson-eg">${lesson.eg}</div>`;
+  Sound.playSfx("star");
+  show("lesson");
+}
+$("lessonBack").onclick=()=>openSubject(curSubj);
+$("lessonStart").onclick=()=>{ Sound.playSfx("correct"); startQuiz(curSubj,curTopic); };
+
+/* ============================================================
    答题逻辑
    ============================================================ */
+function shuffle(arr){
+  const a=arr.slice();
+  for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; }
+  return a;
+}
+// 打乱每道题的选项，并重新定位正确答案，防止记答案位置
+function shuffleOptions(item){
+  const correctTxt=item.opts[item.a];
+  const opts=shuffle(item.opts);
+  return Object.assign({}, item, { opts, a: opts.indexOf(correctTxt) });
+}
+
 function startQuiz(sk,tk){
   curSubj=sk; curTopic=tk;
-  queue=SYLLABUS[save.grade].subjects[sk].topics[tk].qs.slice();
+  // 随机打乱题目顺序与选项顺序，每次挑战都不一样，更考验真正的理解
+  queue=shuffle(SYLLABUS[save.grade].subjects[sk].topics[tk].qs).map(shuffleOptions);
   idx=0; correct=0; streak=0; maxStreakInSession=0;
   unlockedBonusThisQuiz=false;
   
@@ -1052,9 +1250,14 @@ $("quitQuiz").onclick=()=>{ openSubject(curSubj); };
 $("rReplay").onclick=()=> startQuiz(curSubj,curTopic);
 $("rBack").onclick=()=> openSubject(curSubj);
 $("rGameBtn").onclick=()=> {
-  const weathers = ['normal', 'wind', 'storm', 'drift', 'anomaly'];
-  const randWeather = weathers[Math.floor(Math.random() * weathers.length)];
-  initGame(randWeather);
+  // 每次随机选一个奖励小游戏，玩法都不一样！
+  if (Math.random() < 0.5) {
+    const weathers = ['normal', 'wind', 'storm', 'drift', 'anomaly'];
+    const randWeather = weathers[Math.floor(Math.random() * weathers.length)];
+    initGame(randWeather);
+  } else {
+    initMathGame();
+  }
 };
 
 function popEmoji(e){ 
@@ -1399,12 +1602,179 @@ function endGame() {
   
   // Switch Done Screen Game Trigger Off
   $("bonusUnlockCard").style.display = "none";
-  
+
   // Replace replay button with back button inside modal
   setTimeout(() => {
     openSubject(curSubj);
   }, 3200);
 }
+
+/* ============================================================
+   "闪电心算" 迷你游戏 (第二款奖励游戏)
+   屏幕上方出现算式，点击飘动的正确答案泡泡得星星。
+   ============================================================ */
+const mathCanvas = $("mathCanvas");
+const mathCtx = mathCanvas.getContext("2d");
+let mathActive = false, mathTimeLeft = 20, mathTimerId = null, mathLoopId = null;
+let mathBubbles = [], mathScore = 0, mathAnswer = 0, mathSpawnAt = 0, mathPops = [];
+
+function makeProblem(){
+  const g = save.grade;
+  const ops = g === "std4" ? ["+","-","×","×"] : ["+","-","×"];
+  const op = ops[Math.floor(Math.random()*ops.length)];
+  let a, b, ans;
+  if (op === "+"){ const max = g==="std4"?50:20; a=1+Math.floor(Math.random()*max); b=1+Math.floor(Math.random()*max); ans=a+b; }
+  else if (op === "-"){ const max = g==="std4"?60:20; a=5+Math.floor(Math.random()*max); b=1+Math.floor(Math.random()*a); ans=a-b; }
+  else { const max = g==="std4"?12:9; a=2+Math.floor(Math.random()*(max-1)); b=2+Math.floor(Math.random()*(max-1)); ans=a*b; }
+  return { text: `${a} ${op} ${b} = ?`, answer: ans };
+}
+
+function newMathProblem(){
+  const p = makeProblem();
+  mathAnswer = p.answer;
+  $("mathTarget").textContent = p.text;
+}
+
+function fitMathCanvas(){
+  const p = mathCanvas.parentElement;
+  mathCanvas.width = p.clientWidth;
+  mathCanvas.height = p.clientHeight;
+}
+
+function initMathGame(){
+  $("mathStars").textContent = "0";
+  $("mathTimer").textContent = "20";
+  $("mathTarget").textContent = "?";
+  show("math-screen");
+  $("mathStartOverlay").style.display = "flex";
+  fitMathCanvas();
+  if (!mathCanvas._bound){
+    const tap = (e)=>{
+      if(!mathActive) return;
+      const rect = mathCanvas.getBoundingClientRect();
+      const cx = (e.touches?e.touches[0].clientX:e.clientX) - rect.left;
+      const cy = (e.touches?e.touches[0].clientY:e.clientY) - rect.top;
+      for(let i=mathBubbles.length-1;i>=0;i--){
+        const bb = mathBubbles[i];
+        if (Math.hypot(cx-bb.x, cy-bb.y) < bb.r){
+          if (bb.val === mathAnswer){
+            mathScore++; Sound.playSfx("star"); mathPop("✓ +1", bb.x, bb.y, "#2ecc71");
+            newMathProblem();
+          } else {
+            mathScore = Math.max(0, mathScore-1); Sound.playSfx("wrong"); mathPop("✗ -1", bb.x, bb.y, "#e74c3c");
+          }
+          $("mathStars").textContent = mathScore;
+          mathBubbles.splice(i,1);
+          break;
+        }
+      }
+    };
+    mathCanvas.addEventListener("mousedown", tap);
+    mathCanvas.addEventListener("touchstart", tap, { passive:true });
+    mathCanvas._bound = true;
+  }
+}
+
+function spawnBubble(){
+  // 一半几率生成正确答案，其余是相近的干扰数字
+  let val;
+  if (Math.random() < 0.45) val = mathAnswer;
+  else {
+    const delta = (Math.floor(Math.random()*7)+1) * (Math.random()<0.5?-1:1);
+    val = Math.max(0, mathAnswer + delta);
+    if (val === mathAnswer) val += 1;
+  }
+  const r = 26;
+  mathBubbles.push({
+    x: r + Math.random()*(mathCanvas.width - 2*r),
+    y: mathCanvas.height + r,
+    val, r,
+    vy: -(0.8 + Math.random()*0.9),
+    vx: (Math.random()-0.5)*0.6,
+    hue: Math.floor(Math.random()*360)
+  });
+}
+
+function mathPop(txt,x,y,color){ mathPops.push({txt,x,y,color,op:1}); }
+
+function startMathGame(){
+  mathActive = true; mathScore = 0; mathTimeLeft = 20; mathBubbles = []; mathPops = [];
+  mathSpawnAt = 0;
+  newMathProblem();
+  Sound.playSfx("fanfare");
+  if (mathTimerId) clearInterval(mathTimerId);
+  mathTimerId = setInterval(()=>{
+    mathTimeLeft--; $("mathTimer").textContent = mathTimeLeft;
+    if (mathTimeLeft <= 0) endMathGame();
+  }, 1000);
+  if (mathLoopId) cancelAnimationFrame(mathLoopId);
+  mathLoop();
+}
+
+function mathLoop(){
+  if(!mathActive) return;
+  // 背景
+  mathCtx.fillStyle = "#0a1430";
+  mathCtx.fillRect(0,0,mathCanvas.width,mathCanvas.height);
+  mathCtx.fillStyle = "rgba(255,255,255,0.25)";
+  for(let i=0;i<18;i++){
+    let py = (Date.now()/30 + i*60) % mathCanvas.height;
+    mathCtx.fillRect((i*61)%mathCanvas.width, py, 1.5, 1.5);
+  }
+  // 生成泡泡
+  const now = Date.now();
+  if (now - mathSpawnAt > 620 && mathBubbles.length < 9){ spawnBubble(); mathSpawnAt = now; }
+  // 更新 + 画泡泡
+  for(let i=mathBubbles.length-1;i>=0;i--){
+    const b = mathBubbles[i];
+    b.y += b.vy; b.x += b.vx;
+    if (b.x < b.r || b.x > mathCanvas.width-b.r) b.vx *= -1;
+    mathCtx.beginPath();
+    mathCtx.arc(b.x,b.y,b.r,0,7);
+    mathCtx.fillStyle = `hsla(${b.hue},70%,55%,0.9)`;
+    mathCtx.fill();
+    mathCtx.lineWidth = 3; mathCtx.strokeStyle = "rgba(255,255,255,0.7)"; mathCtx.stroke();
+    mathCtx.fillStyle = "#fff";
+    mathCtx.font = "bold 20px sans-serif";
+    mathCtx.textAlign = "center"; mathCtx.textBaseline = "middle";
+    mathCtx.fillText(b.val, b.x, b.y);
+    if (b.y < -b.r) mathBubbles.splice(i,1);
+  }
+  // 浮动得分文字
+  mathCtx.font = "bold 18px sans-serif";
+  for(let i=mathPops.length-1;i>=0;i--){
+    const p = mathPops[i]; p.y -= 1.3; p.op -= 0.03;
+    mathCtx.fillStyle = `rgba(${p.color==="#2ecc71"?"46,204,113":"231,76,60"},${p.op})`;
+    mathCtx.fillText(p.txt, p.x, p.y);
+    if (p.op <= 0) mathPops.splice(i,1);
+  }
+  mathLoopId = requestAnimationFrame(mathLoop);
+}
+
+function endMathGame(){
+  mathActive = false;
+  clearInterval(mathTimerId);
+  cancelAnimationFrame(mathLoopId);
+  Sound.playSfx("fanfare");
+  save.stars += mathScore; save.points += mathScore*10;
+  persist(); refreshHud();
+  mathCtx.fillStyle = "rgba(10,10,30,0.92)";
+  mathCtx.fillRect(0,0,mathCanvas.width,mathCanvas.height);
+  mathCtx.fillStyle = "#f1c40f"; mathCtx.font = "bold 28px sans-serif";
+  mathCtx.textAlign = "center";
+  mathCtx.fillText("⚡ 心算结束 ⚡", mathCanvas.width/2, mathCanvas.height/2 - 40);
+  mathCtx.fillStyle = "#fff"; mathCtx.font = "18px sans-serif";
+  mathCtx.fillText(`你算对换来 ${mathScore} 颗额外星星！`, mathCanvas.width/2, mathCanvas.height/2 + 10);
+  mathCtx.fillStyle = "rgba(255,255,255,0.7)"; mathCtx.font = "14px sans-serif";
+  mathCtx.fillText("积分奖励 +" + (mathScore*10) + "！即将返回。", mathCanvas.width/2, mathCanvas.height/2 + 45);
+  $("bonusUnlockCard").style.display = "none";
+  setTimeout(()=>openSubject(curSubj), 3200);
+}
+
+$("mathStartBtn").onclick = () => {
+  $("mathStartOverlay").style.display = "none";
+  startMathGame();
+};
 
 // Run Grade Screen by default
 if (save.grade) {
