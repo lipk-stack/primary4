@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="zh-Hans">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>星星学院 · 四年级闯关乐园</title>
+<style>
+  /* ===== 星星学院 — 马来西亚华小四年级学习游戏 =====
+     单文件 · 离线可玩 · iPad/iPhone/电脑通用 */
+  :root{
+    --bg1:#1b2a6b; --bg2:#3b1f7a; --card:#ffffff; --ink:#2b2d42;
+    --good:#2ecc71; --bad:#ff6b6b; --gold:#ffd23f; --accent:#5b8cff;
+    --soft:#eef2ff; --shadow:0 10px 30px rgba(0,0,0,.18);
+  }
+  *{box-sizing:border-box; -webkit-tap-highlight-color:transparent; font-family:"PingFang SC","Microsoft YaHei","Heiti SC",system-ui,sans-serif;}
+  html,body{margin:0; height:100%;}
+  body{
+    background:linear-gradient(160deg,var(--bg1),var(--bg2));
+    color:var(--ink); min-height:100dvh; overflow-x:hidden;
+    display:flex; justify-content:center; align-items:flex-start;
+    padding:env(safe-area-inset-top) 0 env(safe-area-inset-bottom);
+  }
+  #stars{position:fixed; inset:0; pointer-events:none; z-index:0;}
+  .app{width:100%; max-width:760px; padding:14px 16px 40px; position:relative; z-index:1;}
+  .screen{display:none; animation:fade .35s ease;}
+  .screen.active{display:block;}
+  @keyframes fade{from{opacity:0; transform:translateY(8px);} to{opacity:1; transform:none;}}
+
+  /* 顶部状态条 */
+  .hud{display:flex; align-items:center; gap:10px; color:#fff; margin-bottom:14px; flex-wrap:wrap;}
+  .hud .pill{background:rgba(255,255,255,.16); border-radius:30px; padding:7px 14px; font-weight:700; font-size:15px; display:flex; align-items:center; gap:6px;}
+  .hud .grow{flex:1;}
+  .mascot{font-size:30px;}
+
+  h1{color:#fff; text-align:center; font-size:30px; margin:6px 0 2px; text-shadow:0 3px 0 rgba(0,0,0,.18);}
+  .sub{color:#dfe6ff; text-align:center; margin:0 0 18px; font-size:15px;}
+
+  /* 卡片与按钮 */
+  .card{background:var(--card); border-radius:22px; box-shadow:var(--shadow); padding:18px; margin-bottom:16px;}
+  .grid{display:grid; grid-template-columns:repeat(2,1fr); gap:14px;}
+  .tile{background:var(--card); border-radius:20px; box-shadow:var(--shadow); padding:18px 14px; text-align:center; cursor:pointer; border:3px solid transparent; transition:transform .12s, border-color .12s; position:relative;}
+  .tile:active{transform:scale(.96);}
+  .tile .ico{font-size:42px; display:block; margin-bottom:6px;}
+  .tile .t{font-weight:800; font-size:18px;}
+  .tile .d{font-size:13px; color:#6b7280; margin-top:3px;}
+  .tile .pg{font-size:12px; color:var(--accent); font-weight:700; margin-top:6px;}
+  .tile .lock{position:absolute; inset:0; background:rgba(255,255,255,.78); border-radius:18px; display:flex; align-items:center; justify-content:center; font-size:30px;}
+
+  .btn{display:block; width:100%; border:none; border-radius:16px; padding:15px; font-size:18px; font-weight:800; cursor:pointer; transition:transform .1s, filter .1s; box-shadow:0 5px 0 rgba(0,0,0,.12);}
+  .btn:active{transform:translateY(3px); box-shadow:0 2px 0 rgba(0,0,0,.12);}
+  .btn.primary{background:var(--gold); color:#5a3e00;}
+  .btn.accent{background:var(--accent); color:#fff;}
+  .btn.ghost{background:var(--soft); color:var(--ink); box-shadow:none;}
+  .row{display:flex; gap:10px;}
+  .row>*{flex:1;}
+
+  /* 题目区 */
+  .qtop{display:flex; justify-content:space-between; align-items:center; color:#fff; margin-bottom:10px; font-weight:700;}
+  .bar{height:12px; background:rgba(255,255,255,.2); border-radius:10px; overflow:hidden; margin-bottom:16px;}
+  .bar>i{display:block; height:100%; background:var(--gold); width:0; transition:width .4s;}
+  .qcard{background:var(--card); border-radius:22px; box-shadow:var(--shadow); padding:20px;}
+  .qtag{display:inline-block; background:var(--soft); color:var(--accent); font-weight:700; font-size:13px; padding:4px 12px; border-radius:20px; margin-bottom:12px;}
+  .q{font-size:23px; font-weight:800; line-height:1.5; margin:4px 0 18px;}
+  .opts{display:grid; gap:12px;}
+  .opt{background:var(--soft); border:3px solid transparent; border-radius:16px; padding:15px 16px; font-size:19px; font-weight:700; cursor:pointer; text-align:left; transition:transform .1s; min-height:56px;}
+  .opt:active{transform:scale(.98);}
+  .opt.correct{background:#e3fbe9; border-color:var(--good); color:#157a3d;}
+  .opt.wrong{background:#ffe7e7; border-color:var(--bad); color:#b3241e;}
+  .opt.dim{opacity:.55;}
+
+  /* 讲解框 */
+  .explain{margin-top:16px; border-radius:16px; padding:16px; display:none; animation:fade .3s;}
+  .explain.show{display:block;}
+  .explain.ok{background:#e9fbef; border:2px solid var(--good);}
+  .explain.no{background:#fff0f0; border:2px solid var(--bad);}
+  .explain h3{margin:0 0 8px; font-size:18px; display:flex; align-items:center; gap:8px;}
+  .explain .lead{font-weight:800; margin-bottom:6px;}
+  .explain p{margin:6px 0; font-size:16px; line-height:1.6;}
+  .explain .tip{background:#fffbe6; border-left:5px solid var(--gold); padding:10px 12px; border-radius:8px; margin-top:10px; font-size:15px;}
+
+  /* 结算页 */
+  .result{text-align:center; padding:26px 18px;}
+  .result .big{font-size:64px; margin:6px 0;}
+  .result h2{font-size:26px; margin:6px 0;}
+  .result .score{font-size:20px; color:var(--accent); font-weight:800; margin:10px 0;}
+  .starsRow{font-size:40px; letter-spacing:6px; margin:12px 0;}
+
+  .footnote{color:#c8d2ff; text-align:center; font-size:12px; margin-top:18px; line-height:1.6;}
+  .pop{position:fixed; left:50%; top:30%; transform:translate(-50%,-50%) scale(.6); font-size:80px; opacity:0; pointer-events:none; z-index:50; transition:transform .4s, opacity .4s;}
+  .pop.show{opacity:1; transform:translate(-50%,-50%) scale(1);}
+  @media(max-width:380px){ .grid{grid-template-columns:1fr;} .q{font-size:20px;} }
+</style>
+</head>
+<body>
+<canvas id="stars"></canvas>
+<div class="pop" id="pop">⭐</div>
+<div class="app">
+
+  <!-- ===== 首页：选科目 ===== -->
+  <section id="home" class="screen active">
+    <div class="hud">
+      <span class="mascot">🐼</span>
+      <span class="pill">⭐ <b id="hStars">0</b></span>
+      <span class="pill">🏅 <b id="hPoints">0</b></span>
+      <span class="grow"></span>
+      <span class="pill" id="hName">同学</span>
+    </div>
+    <h1>🌟 星星学院 🌟</h1>
+    <p class="sub">四年级闯关乐园 · 跟着乐乐熊猫一起学！</p>
+    <div class="grid" id="subjectGrid"></div>
+    <div class="footnote">
+      依据马来西亚华小 KSSR 四年级课程标准编写 · 题目附详细讲解<br>
+      可离线游玩 · 适用于 iPad · iPhone · 电脑
+    </div>
+  </section>
+
+  <!-- ===== 选单元 ===== -->
+  <section id="topics" class="screen">
+    <div class="hud">
+      <span class="pill" id="backHome" style="cursor:pointer">⬅ 返回</span>
+      <span class="grow"></span>
+      <span class="pill">⭐ <b id="tStars">0</b></span>
+    </div>
+    <h1 id="subjTitle">单元</h1>
+    <p class="sub" id="subjDesc"></p>
+    <div class="grid" id="topicGrid"></div>
+  </section>
+
+  <!-- ===== 答题 ===== -->
+  <section id="quiz" class="screen">
+    <div class="qtop">
+      <span class="pill" id="quitQuiz" style="cursor:pointer">✖ 退出</span>
+      <span>第 <b id="qNum">1</b> / <b id="qTot">5</b> 题</span>
+      <span>🔥 连对 <b id="streak">0</b></span>
+    </div>
+    <div class="bar"><i id="progBar"></i></div>
+    <div class="qcard">
+      <span class="qtag" id="qTag">单元</span>
+      <div class="q" id="qText">题目</div>
+      <div class="opts" id="opts"></div>
+      <div class="explain" id="explain"></div>
+      <button class="btn primary" id="nextBtn" style="display:none; margin-top:16px;">下一题 ➡</button>
+    </div>
+  </section>
+
+  <!-- ===== 结算 ===== -->
+  <section id="done" class="screen">
+    <div class="card result">
+      <div class="big" id="rFace">🎉</div>
+      <h2 id="rTitle">闯关成功！</h2>
+      <div class="starsRow" id="rStars">⭐⭐⭐</div>
+      <div class="score" id="rScore">答对 5 / 5 题</div>
+      <p id="rMsg" style="font-size:16px; color:#555;"></p>
+      <div class="row" style="margin-top:18px;">
+        <button class="btn ghost" id="rReplay">再玩一次</button>
+        <button class="btn accent" id="rBack">选其他单元</button>
+      </div>
+    </div>
+  </section>
+
+</div>
+<script>
+/* ============================================================
+   星星学院 — 题库（马来西亚华小 KSSR 四年级）
+   每题：q 题目 / opts 选项 / a 正确选项索引 / why 讲解
+   ============================================================ */
+const DATA = {
+  math: {
+    name:"数学", icon:"🔢", desc:"整数、运算、分数、钱币、时间、度量衡",
+    topics:{
+      place:{ name:"十万以内的数", icon:"🔟", qs:[
+        {q:"数字 35 814 中，数字 5 在哪个数位？", opts:["千位","万位","百位","十位"], a:0,
+         why:["35 814 从右边数起：个位 4、十位 1、百位 8、千位 5、万位 3。","所以 5 在<b>千位</b>，代表 5 个千，也就是 5000。"], tip:"读数口诀：个、十、百、千、万，从右往左数位升。"},
+        {q:"“七万零六十” 写成数字是？", opts:["7060","70 060","70 600","700 060"], a:1,
+         why:["七万 = 70 000；零六十 = 60，中间的千位、百位都是 0。","合起来就是 <b>70 060</b>。"], tip:"听到“零”表示中间有数位是 0，别漏写！"},
+        {q:"48 250 的近似数（凑整到最接近的千）是多少？", opts:["48 000","48 200","48 300","49 000"], a:0,
+         why:["看百位上的数字 2，比 5 小，所以向下舍去（4舍）。","千位保持 8 不变，结果是 <b>48 000</b>。"], tip:"凑整看后一位：≥5 进一，<5 舍去。"},
+        {q:"下列哪个数最大？", opts:["29 999","30 100","30 010","29 909"], a:1,
+         why:["先比万位：30 100 和 30 010 的万位都是 3，比其他两个的 2 大。","再比千位与百位：30 <b>1</b>00 比 30 <b>0</b>10 大，所以最大是 <b>30 100</b>。"], tip:"比大小：从最高位（左边）开始一位一位比。"},
+      ]},
+      addsub:{ name:"加法与减法", icon:"➕", qs:[
+        {q:"3 450 + 2 680 = ?", opts:["6 030","6 130","6 230","5 130"], a:1,
+         why:["个位 0+0=0；十位 5+8=13，写 3 进 1；百位 4+6+1=11，写 1 进 1；千位 3+2+1=6。","结果是 <b>6 130</b>。"], tip:"满十进一，记得把进位的 1 加上去。"},
+        {q:"妈妈有 RM 8 000，买冰箱用了 RM 3 650，还剩多少？", opts:["RM 4 350","RM 4 450","RM 5 350","RM 3 350"], a:0,
+         why:["这是减法：8000 − 3650。","8000 − 3650 = <b>4350</b>。所以还剩 RM 4 350。"], tip:"遇到“还剩、相差、少多少”通常用减法。"},
+        {q:"一个数加上 1 250 等于 4 000，这个数是多少？", opts:["2 650","2 750","2 850","5 250"], a:1,
+         why:["求加数：用和减去已知的加数。","4000 − 1250 = <b>2750</b>。"], tip:"加法逆运算是减法：和 − 一个加数 = 另一个加数。"},
+      ]},
+      multiply:{ name:"乘法", icon:"✖️", qs:[
+        {q:"24 × 6 = ?", opts:["124","134","144","154"], a:2,
+         why:["个位 4×6=24，写 4 进 2；十位 2×6=12，再加进位 2 等于 14。","结果是 <b>144</b>。"], tip:"先乘个位再乘十位，别忘了加进位。"},
+        {q:"一盒有 8 支笔，125 盒一共有多少支笔？", opts:["900","1 000","1 025","1 100"], a:1,
+         why:["每盒 8 支，共 125 盒，用乘法：125 × 8。","125 × 8 = <b>1000</b> 支。"], tip:"“每…共…”表示要把份数乘起来。"},
+        {q:"36 × 10 = ?", opts:["46","306","360","3 600"], a:2,
+         why:["一个数乘以 10，就在后面添一个 0。","36 添一个 0 = <b>360</b>。"], tip:"×10 添一个0，×100 添两个0。"},
+      ]},
+      divide:{ name:"除法", icon:"➗", qs:[
+        {q:"96 ÷ 4 = ?", opts:["22","24","26","28"], a:1,
+         why:["把 96 平均分成 4 份。先 9 ÷ 4 = 2 余 1，再 16 ÷ 4 = 4。","结果是 <b>24</b>。"], tip:"验算：24 × 4 = 96，对上了就正确。"},
+        {q:"老师把 45 颗糖平均分给 7 个学生，每人几颗、剩几颗？", opts:["6 颗 余 3","6 颗 余 5","5 颗 余 10","7 颗 余 0"], a:0,
+         why:["45 ÷ 7：7 × 6 = 42，最接近且不超过 45。","45 − 42 = 3，所以每人 <b>6 颗，余 3 颗</b>。"], tip:"余数一定要比除数小（这里余数<7）。"},
+      ]},
+      fraction:{ name:"分数", icon:"🍕", qs:[
+        {q:"一个比萨切成 8 块，吃掉 3 块，吃掉了几分之几？", opts:["3/5","5/8","3/8","8/3"], a:2,
+         why:["分母是总份数 8，分子是吃掉的份数 3。","所以吃掉了 <b>3/8</b>。"], tip:"分数 = 取的份数 ÷ 总份数。"},
+        {q:"下列哪个分数最大？", opts:["1/2","1/3","1/4","1/6"], a:0,
+         why:["分子都是 1 时，分母越小，每一份越大。","分母 2 最小，所以 <b>1/2</b> 最大。"], tip:"同分子比大小：分母小的反而大。"},
+        {q:"2/5 + 1/5 = ?", opts:["3/10","3/5","2/10","1/5"], a:1,
+         why:["分母相同的分数相加，分母不变，只把分子相加。","2 + 1 = 3，所以等于 <b>3/5</b>。"], tip:"同分母相加减：分母不变，分子加减。"},
+      ]},
+      money:{ name:"钱币", icon:"💰", qs:[
+        {q:"RM 5.60 + RM 2.75 = ?", opts:["RM 7.35","RM 8.35","RM 8.45","RM 7.45"], a:1,
+         why:["先算仙：60 + 75 = 135 仙 = RM 1.35。","令吉 5 + 2 + 1 = 8，所以是 <b>RM 8.35</b>。"], tip:"100 仙 = RM 1，满100仙要进位成令吉。"},
+        {q:"小明用 RM 20 买了 RM 13.50 的书，找回多少？", opts:["RM 6.50","RM 7.50","RM 6.00","RM 7.00"], a:0,
+         why:["找钱用减法：20.00 − 13.50。","结果是 <b>RM 6.50</b>。"], tip:"“找回、找钱”就是付出的钱减去价钱。"},
+      ]},
+      time:{ name:"时间", icon:"⏰", qs:[
+        {q:"2 小时 30 分钟 一共是多少分钟？", opts:["150 分钟","230 分钟","90 分钟","120 分钟"], a:0,
+         why:["1 小时 = 60 分钟，2 小时 = 120 分钟。","120 + 30 = <b>150 分钟</b>。"], tip:"换算：小时 × 60 + 分钟。"},
+        {q:"电影 7:45 开始，放映 1 小时 30 分钟，几点结束？", opts:["8:15","9:00","9:15","8:45"], a:2,
+         why:["7:45 加 1 小时 = 8:45，再加 30 分钟。","8:45 + 30 分 = <b>9:15</b>。"], tip:"分钟相加满60要进位成1小时。"},
+      ]},
+      measure:{ name:"度量衡", icon:"📏", qs:[
+        {q:"3 米（m）等于多少厘米（cm）？", opts:["30 cm","300 cm","3 000 cm","30 000 cm"], a:1,
+         why:["1 米 = 100 厘米。","3 × 100 = <b>300 厘米</b>。"], tip:"1 m = 100 cm；1 km = 1000 m。"},
+        {q:"2 千克（kg）500 克（g）一共是多少克？", opts:["250 g","2 050 g","2 500 g","25 000 g"], a:2,
+         why:["1 千克 = 1000 克，2 千克 = 2000 克。","2000 + 500 = <b>2500 克</b>。"], tip:"1 kg = 1000 g；1 L = 1000 mL。"},
+      ]},
+    }
+  },
+  chinese: {
+    name:"华文", icon:"📖", desc:"量词、成语、近反义词、标点、部首",
+    topics:{
+      liangci:{ name:"量词", icon:"🧮", qs:[
+        {q:"一（　）马　——括号里填哪个量词？", opts:["条","匹","头","只"], a:1,
+         why:["马的专用量词是“匹”，例如“一匹马”、“千军万马”。","牛、猪用“头”，鱼、蛇用“条”，鸟、猫用“只”。"], tip:"动物量词各不同：马用匹、牛用头、鱼用条。"},
+        {q:"一（　）报纸　——应该填？", opts:["张","本","份","片"], a:0,
+         why:["薄薄一平面的东西用“张”：一张报纸、一张纸、一张桌子。","“本”用于书；“份”可指一份报纸（整套），但单看纸面用“张”最常见。"], tip:"平面薄物常用“张”。"},
+        {q:"一（　）裤子　——正确量词是？", opts:["件","条","双","顶"], a:1,
+         why:["裤子、裙子、河、路这类长条状的东西用“条”。","上衣才用“件”，鞋袜用“双”，帽子用“顶”。"], tip:"裤子、裙子用“条”，上衣用“件”。"},
+      ]},
+      chengyu:{ name:"成语", icon:"🏮", qs:[
+        {q:"“一心一意” 的意思最接近？", opts:["三心二意","专心致志","心不在焉","马马虎虎"], a:1,
+         why:["“一心一意”形容心思专一、不分心。","近义词是“专心致志”；反义词是“三心二意、心不在焉”。"], tip:"成语意思相近叫近义词，相反叫反义词。"},
+        {q:"形容做事非常小心、不敢出错，用哪个成语？", opts:["小心翼翼","得意洋洋","七上八下","争先恐后"], a:0,
+         why:["“小心翼翼”表示非常谨慎、十分小心。","“得意洋洋”是骄傲；“七上八下”是心慌；“争先恐后”是抢着向前。"], tip:"看关键字“小心”就能选出“小心翼翼”。"},
+        {q:"“画蛇添足” 这个成语告诉我们什么道理？", opts:["要多多练习","做多余的事反而坏事","画画要认真","要团结合作"], a:1,
+         why:["蛇本来没有脚，给它添上脚反而不像蛇了。","比喻做了<b>多余的事，反而把事情弄糟</b>。"], tip:"成语常含道理，要理解故事的寓意。"},
+      ]},
+      fanyi:{ name:"反义词", icon:"🔁", qs:[
+        {q:"“勤劳” 的反义词是？", opts:["努力","懒惰","认真","辛苦"], a:1,
+         why:["勤劳指爱劳动、肯努力；意思相反的是“懒惰”。","努力、认真、辛苦都和勤劳意思相近，不是反义词。"], tip:"反义词＝意思完全相反的词。"},
+        {q:"“宽阔” 的反义词是？", opts:["狭窄","广大","遥远","平坦"], a:0,
+         why:["宽阔指又宽又大；相反的是“狭窄”（又窄又小）。","广大与宽阔意思相近，不是反义。"], tip:"想象画面：宽↔窄。"},
+      ]},
+      jinyi:{ name:"近义词", icon:"🟰", qs:[
+        {q:"“美丽” 的近义词是？", opts:["丑陋","漂亮","干净","高大"], a:1,
+         why:["美丽和“漂亮”意思相近，都形容好看。","“丑陋”是反义词，不能选。"], tip:"近义词＝意思相近、可以替换的词。"},
+        {q:"“高兴” 的近义词是？", opts:["伤心","快乐","生气","害怕"], a:1,
+         why:["高兴与“快乐”意思相近，都表示心情好。","伤心、生气、害怕都是相反或不同的情绪。"], tip:"换词不变意，就是近义词。"},
+      ]},
+      biaodian:{ name:"标点符号", icon:"❓", qs:[
+        {q:"“你叫什么名字（　）” 句末应填哪个标点？", opts:["。句号","？问号","！叹号","，逗号"], a:1,
+         why:["这是一个疑问句（在问问题），句末要用<b>问号？</b>。","陈述句用句号，感叹句用叹号。"], tip:"在问问题 → 用问号？"},
+        {q:"“哇（　）这里真美丽！” 第一个括号里该用什么标点？", opts:["。","，","！","？"], a:2,
+         why:["“哇”是表示惊叹的语气词，后面用<b>叹号！</b>，表达强烈的感情。","句末“真美丽”也带强烈感情，所以也用叹号。"], tip:"表示惊讶、激动 → 用叹号！"},
+        {q:"句子中表示一句话还没说完、要稍稍停顿，用什么标点？", opts:["句号。","逗号，","问号？","冒号："], a:1,
+         why:["句子中间的停顿用<b>逗号，</b>；一句话完全说完才用句号。","冒号常用在“说：”后面引出话。"], tip:"句中停顿用逗号，话讲完才用句号。"},
+      ]},
+      bushou:{ name:"部首", icon:"🈯", qs:[
+        {q:"“江、河、湖、海” 这些字都和什么有关？它们的部首是？", opts:["木","氵（三点水）","火","土"], a:1,
+         why:["这些字都带“氵”（三点水），表示和<b>水</b>有关。","懂部首能帮我们猜字的意思。"], tip:"三点水氵 → 多与水有关。"},
+        {q:"“树、林、桥、椅” 的共同部首是？", opts:["氵","木","钅","艹"], a:1,
+         why:["这些字都带“木”字旁，表示和<b>树木</b>有关。","钅（金字旁）多与金属有关，艹（草字头）多与植物花草有关。"], tip:"木字旁 → 多与树木有关。"},
+      ]},
+    }
+  },
+  science: {
+    name:"科学", icon:"🔬", desc:"生物的需要、人类、动物、植物、物质",
+    topics:{
+      needs:{ name:"生物的基本需要", icon:"🌱", qs:[
+        {q:"下列哪一项 不是 生物生存的基本需要？", opts:["空气","食物","水","玩具"], a:3,
+         why:["所有生物都需要<b>空气、水、食物</b>才能生存。","玩具不是生存必需，所以选玩具。"], tip:"生存三宝：空气、水、食物。"},
+        {q:"植物制造食物的过程叫做什么？", opts:["呼吸作用","光合作用","蒸发","消化"], a:1,
+         why:["绿色植物利用阳光、水和二氧化碳制造食物，这叫<b>光合作用</b>。","它发生在叶子里，还会放出氧气。"], tip:"光合作用＝阳光＋水＋二氧化碳 → 食物＋氧气。"},
+      ]},
+      animal:{ name:"动物", icon:"🐾", qs:[
+        {q:"青蛙小时候是蝌蚪，长大变成青蛙，这种成长方式叫？", opts:["变态","脱皮","冬眠","迁徙"], a:0,
+         why:["动物在成长中身体形态发生很大改变，叫做<b>变态</b>。","蝌蚪→青蛙、毛虫→蝴蝶都是变态。"], tip:"身体形态大变身 = 变态。"},
+        {q:"下列哪种动物用 鳃 呼吸？", opts:["猫","鱼","鸟","蛇"], a:1,
+         why:["鱼住在水里，用<b>鳃</b>呼吸水中的氧气。","猫、鸟、蛇用肺呼吸。"], tip:"鱼用鳃，陆地动物多用肺。"},
+      ]},
+      matter:{ name:"物质的三态", icon:"💧", qs:[
+        {q:"水结成冰，是从液态变成什么状态？", opts:["气态","固态","液态","等离子态"], a:1,
+         why:["水（液态）遇冷会结成冰，变成<b>固态</b>。","冰受热融化又变回液态的水。"], tip:"三态：固体、液体、气体。"},
+        {q:"湿衣服晾干，水到哪里去了？", opts:["渗进衣服","蒸发变成水蒸气","结成冰","变成固体"], a:1,
+         why:["水受热<b>蒸发</b>，变成看不见的水蒸气飞到空气中，衣服就干了。","这就是为什么太阳大的时候衣服干得快。"], tip:"蒸发：液态的水 → 气态的水蒸气。"},
+      ]},
+    }
+  }
+};
+
+/* ============================================================
+   游戏状态 + 存档（localStorage）
+   ============================================================ */
+const SAVE_KEY = "xingxing_v1";
+let save = load();
+function load(){
+  try{ return JSON.parse(localStorage.getItem(SAVE_KEY)) || base(); }
+  catch(e){ return base(); }
+}
+function base(){ return {stars:0, points:0, best:{}}; } // best[subj.topic] = 星数
+function persist(){ localStorage.setItem(SAVE_KEY, JSON.stringify(save)); }
+
+/* ============================================================
+   导航
+   ============================================================ */
+const $ = id => document.getElementById(id);
+function show(id){ document.querySelectorAll(".screen").forEach(s=>s.classList.remove("active")); $(id).classList.add("active"); window.scrollTo(0,0); }
+function refreshHud(){ $("hStars").textContent=save.stars; $("hPoints").textContent=save.points; $("tStars").textContent=save.stars; }
+
+let curSubj=null, curTopic=null, queue=[], idx=0, correct=0, streak=0, answered=false;
+
+function renderHome(){
+  refreshHud();
+  const g=$("subjectGrid"); g.innerHTML="";
+  for(const key in DATA){
+    const s=DATA[key];
+    const div=document.createElement("div");
+    div.className="tile";
+    div.innerHTML=`<span class="ico">${s.icon}</span><div class="t">${s.name}</div><div class="d">${s.desc}</div>`;
+    div.onclick=()=>openSubject(key);
+    g.appendChild(div);
+  }
+}
+
+function openSubject(key){
+  curSubj=key; const s=DATA[key];
+  $("subjTitle").textContent=`${s.icon} ${s.name}`;
+  $("subjDesc").textContent="选一个单元开始闯关";
+  const g=$("topicGrid"); g.innerHTML="";
+  for(const tk in s.topics){
+    const t=s.topics[tk];
+    const star=save.best[key+"."+tk]||0;
+    const div=document.createElement("div");
+    div.className="tile";
+    div.innerHTML=`<span class="ico">${t.icon}</span><div class="t">${t.name}</div>
+      <div class="pg">${star? "⭐".repeat(star) : "未挑战"}</div>`;
+    div.onclick=()=>startQuiz(key,tk);
+    g.appendChild(div);
+  }
+  refreshHud(); show("topics");
+}
+
+/* ============================================================
+   答题流程
+   ============================================================ */
+function startQuiz(sk,tk){
+  curSubj=sk; curTopic=tk;
+  queue=DATA[sk].topics[tk].qs.slice();
+  idx=0; correct=0; streak=0;
+  $("qTot").textContent=queue.length;
+  $("qTag").textContent=DATA[sk].name+" · "+DATA[sk].topics[tk].name;
+  show("quiz"); renderQ();
+}
+
+function renderQ(){
+  answered=false;
+  const item=queue[idx];
+  $("qNum").textContent=idx+1;
+  $("streak").textContent=streak;
+  $("progBar").style.width=(idx/queue.length*100)+"%";
+  $("qText").innerHTML=item.q;
+  $("explain").className="explain"; $("explain").innerHTML="";
+  $("nextBtn").style.display="none";
+  const o=$("opts"); o.innerHTML="";
+  item.opts.forEach((txt,i)=>{
+    const b=document.createElement("button");
+    b.className="opt"; b.innerHTML=txt;
+    b.onclick=()=>choose(i,b);
+    o.appendChild(b);
+  });
+}
+
+function choose(i,btn){
+  if(answered) return; answered=true;
+  const item=queue[idx];
+  const opts=[...$("opts").children];
+  opts.forEach((b,j)=>{
+    b.onclick=null;
+    if(j===item.a) b.classList.add("correct");
+    else if(j===i) b.classList.add("wrong");
+    else b.classList.add("dim");
+  });
+  const ex=$("explain");
+  if(i===item.a){
+    correct++; streak++;
+    save.points+=10;
+    popEmoji(streak>=3?"🔥":"⭐");
+    beep(880);
+    ex.className="explain ok show";
+    ex.innerHTML=`<h3>✅ 答对了！太棒了</h3><p class="lead">为什么是「${item.opts[item.a]}」：</p>`
+      + item.why.map(p=>`<p>${p}</p>`).join("")
+      + (item.tip?`<div class="tip">💡 小提示：${item.tip}</div>`:"");
+  } else {
+    streak=0; beep(220);
+    ex.className="explain no show";
+    ex.innerHTML=`<h3>❌ 再想想～ 正确答案是「${item.opts[item.a]}」</h3><p class="lead">讲解：</p>`
+      + item.why.map(p=>`<p>${p}</p>`).join("")
+      + (item.tip?`<div class="tip">💡 小提示：${item.tip}</div>`:"");
+  }
+  $("streak").textContent=streak;
+  persist(); refreshHud();
+  $("nextBtn").style.display="block";
+  $("nextBtn").textContent = (idx===queue.length-1)?"看成绩 🏆":"下一题 ➡";
+}
+
+$("nextBtn").onclick=()=>{
+  idx++;
+  if(idx>=queue.length) finish();
+  else renderQ();
+};
+
+function finish(){
+  $("progBar").style.width="100%";
+  const total=queue.length;
+  let stars = correct===total?3 : correct>=Math.ceil(total*0.6)?2 : correct>=1?1:0;
+  // 星数取历史最佳
+  const key=curSubj+"."+curTopic;
+  const prev=save.best[key]||0;
+  if(stars>prev){ save.stars += (stars-prev); save.best[key]=stars; }
+  persist(); refreshHud();
+  $("rStars").textContent = stars? "⭐".repeat(stars)+"☆".repeat(3-stars) : "☆☆☆";
+  $("rScore").textContent=`答对 ${correct} / ${total} 题`;
+  const m = {3:["🏆","满分通关！你真是小学霸！"],2:["🎉","很棒！再接再厉就满分啦！"],1:["💪","完成啦！多练习会更好哦！"],0:["🌱","别灰心，看讲解再试一次！"]}[stars];
+  $("rFace").textContent=m[0]; $("rTitle").textContent=m[1];
+  $("rMsg").textContent = `本次获得 ${correct*10} 分。累计 ${save.points} 分、${save.stars} 颗星。`;
+  show("done");
+  if(stars===3) burst();
+}
+
+/* ============================================================
+   小特效：星空、奖励弹跳、音效、撒花
+   ============================================================ */
+$("backHome").onclick=()=>{renderHome();show("home");};
+$("quitQuiz").onclick=()=>{openSubject(curSubj);};
+$("rReplay").onclick=()=>startQuiz(curSubj,curTopic);
+$("rBack").onclick=()=>openSubject(curSubj);
+
+function popEmoji(e){ const p=$("pop"); p.textContent=e; p.classList.add("show"); setTimeout(()=>p.classList.remove("show"),500); }
+
+let actx=null;
+function beep(freq){
+  try{
+    actx=actx||new (window.AudioContext||window.webkitAudioContext)();
+    const o=actx.createOscillator(), g=actx.createGain();
+    o.frequency.value=freq; o.type="sine"; o.connect(g); g.connect(actx.destination);
+    g.gain.setValueAtTime(.15,actx.currentTime); g.gain.exponentialRampToValueAtTime(.001,actx.currentTime+.25);
+    o.start(); o.stop(actx.currentTime+.25);
+  }catch(e){}
+}
+
+// 背景星空
+const cv=$("stars"), cx=cv.getContext("2d"); let dots=[];
+function sizeCv(){ cv.width=innerWidth; cv.height=innerHeight; dots=Array.from({length:60},()=>({x:Math.random()*cv.width,y:Math.random()*cv.height,r:Math.random()*1.6+.4,s:Math.random()*.4+.1})); }
+function tick(){ cx.clearRect(0,0,cv.width,cv.height); cx.fillStyle="#fff";
+  dots.forEach(d=>{ d.y+=d.s; if(d.y>cv.height)d.y=0; cx.globalAlpha=d.r/2.2; cx.beginPath(); cx.arc(d.x,d.y,d.r,0,7); cx.fill();});
+  cx.globalAlpha=1; requestAnimationFrame(tick); }
+addEventListener("resize",sizeCv); sizeCv(); tick();
+
+// 撒花
+function burst(){
+  const e=["⭐","🎉","🌟","✨","🏅"];
+  for(let i=0;i<24;i++){
+    const s=document.createElement("div");
+    s.textContent=e[i%e.length];
+    s.style.cssText=`position:fixed;left:${Math.random()*100}vw;top:-40px;font-size:${20+Math.random()*20}px;z-index:60;pointer-events:none;transition:transform 2s linear,opacity 2s;`;
+    document.body.appendChild(s);
+    requestAnimationFrame(()=>{ s.style.transform=`translateY(110vh) rotate(${Math.random()*360}deg)`; s.style.opacity=0; });
+    setTimeout(()=>s.remove(),2100);
+  }
+}
+
+renderHome();
+</script>
+</body>
+</html>

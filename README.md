@@ -1,2 +1,17 @@
-# primary4
-This is a learning app for Malaysia standard 4 syllabus
+# 🌟 星星学院 · 四年级闯关乐园
+
+一款给**马来西亚华小（SJKC）四年级**学生的趣味学习游戏，依据 **KSSR 课程标准**编写。
+
+- 📱 **随处可玩**：单个 `index.html`，用浏览器打开即可在 iPad、iPhone、电脑上游玩。
+- 🔌 **离线运行**：无需联网、无需安装。
+- 🎮 **游戏化**：选科目 → 闯单元 → 答题得星星积分，连对有奖励、满分撒花。
+- 📚 **重在理解**：每题都附**详细讲解**和**记忆小提示**，不只是对错。
+- 🧩 **三大科目**：数学、华文、科学（持续扩充中）。
+
+## 使用方法
+1. 下载 `index.html`（或从 Google Drive 的 `PrimaryApp` 文件夹获取）。
+2. 用 Safari / Chrome 等浏览器打开。
+3. 在 iPad 上可用 Safari「分享 → 添加到主屏幕」，像 App 一样使用。
+
+## 开发进度
+见 [`PROGRESS.md`](PROGRESS.md)。本项目按迭代持续增强，每轮都会扩充内容与功能。
