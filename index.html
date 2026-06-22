@@ -210,9 +210,9 @@
       
       <!-- 奖励关卡激活卡片 -->
       <div id="bonusUnlockCard" style="display:none; margin: 18px 0; padding:16px; border:2px dashed var(--gold); border-radius:18px; background:linear-gradient(180deg, #fffcf0, #fff7d6); animation: pulse 2s infinite;">
-        <h3 style="color:#e67e22; margin:0 0 6px 0; font-size:18px;">🛸 发现宇宙时空裂缝！</h3>
-        <p style="font-size:14px; margin:0 0 12px 0; color:#666;">你达成了成就，解锁了 <b>宇宙星空漫游</b> 奖励关卡！有几率获得额外星星！</p>
-        <button class="btn primary" id="rGameBtn" style="background: linear-gradient(135deg, #f39c12, #e67e22);">🛸 进入太空漫游 🛸</button>
+        <h3 style="color:#e67e22; margin:0 0 6px 0; font-size:18px;">🎁 解锁奖励关卡！</h3>
+        <p style="font-size:14px; margin:0 0 12px 0; color:#666;">你达成了成就，随机开启一款 <b>奖励小游戏</b>（太空漫游 / 数字陨石 / 飞机大战 / 坦克大战）—— 每次都不一样，闯得越好星星越多！</p>
+        <button class="btn primary" id="rGameBtn" style="background: linear-gradient(135deg, #f39c12, #e67e22);">🎮 开始挑战 🎮</button>
       </div>
 
       <div class="row" style="margin-top:18px;">
@@ -239,7 +239,7 @@
       </div>
     </div>
     <div class="footnote" style="color:#a9c2f0; text-shadow: none; margin-top: 8px;">
-      操作方法：在屏幕上左右拖动或直接点击两边，控制熊猫 🐼 移动。
+      操作方法：在屏幕上左右拖动来移动。捕捉类游戏接住星星；射击类游戏（飞机/坦克）会自动开火，瞄准敌人并躲开它们的炮火！
     </div>
   </section>
 
@@ -882,6 +882,28 @@ const Sound = {
         osc.stop(now + idx * 0.09 + 0.25);
       });
     }
+    else if (type === 'laser') {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'square';
+      osc.frequency.setValueAtTime(900, now);
+      osc.frequency.exponentialRampToValueAtTime(280, now + 0.08);
+      gain.gain.setValueAtTime(0.05, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.08);
+      osc.connect(gain); gain.connect(this.ctx.destination);
+      osc.start(now); osc.stop(now + 0.08);
+    }
+    else if (type === 'explosion') {
+      const osc = this.ctx.createOscillator();
+      const gain = this.ctx.createGain();
+      osc.type = 'sawtooth';
+      osc.frequency.setValueAtTime(190, now);
+      osc.frequency.exponentialRampToValueAtTime(45, now + 0.22);
+      gain.gain.setValueAtTime(0.16, now);
+      gain.gain.exponentialRampToValueAtTime(0.001, now + 0.22);
+      osc.connect(gain); gain.connect(this.ctx.destination);
+      osc.start(now); osc.stop(now + 0.22);
+    }
   },
 
   startBgm() {
@@ -1271,13 +1293,18 @@ $("quitQuiz").onclick=()=>{ openSubject(curSubj); };
 $("rReplay").onclick=()=> startQuiz(curSubj,curTopic);
 $("rBack").onclick=()=> openSubject(curSubj);
 $("rGameBtn").onclick=()=> {
-  // 每次随机选择不同的奖励游戏，玩法不重复
-  if (Math.random() < 0.5) {
+  // 每次随机选择不同的奖励游戏，玩法不重复（避免连续两次相同）
+  const modes = ['collect', 'mathmeteor', 'plane', 'tank'];
+  let pick;
+  do { pick = modes[Math.floor(Math.random() * modes.length)]; }
+  while (pick === save.lastBonus && Math.random() < 0.85);
+  save.lastBonus = pick; persist();
+
+  if (pick === 'collect') {
     const weathers = ['normal', 'wind', 'storm', 'drift', 'anomaly'];
-    const randWeather = weathers[Math.floor(Math.random() * weathers.length)];
-    initGame(randWeather, 'collect');
+    initGame(weathers[Math.floor(Math.random() * weathers.length)], 'collect');
   } else {
-    initGame('normal', 'mathmeteor');
+    initGame('normal', pick);
   }
 };
 
@@ -1354,8 +1381,26 @@ let gameScore = 0;
 let pandaX = 150;
 let activeWeather = null;
 let lastSpawnTime = 0;
-let gameMode = 'collect';   // 'collect' | 'mathmeteor'
+let gameMode = 'collect';   // 'collect' | 'mathmeteor' | 'plane' | 'tank'
 let mathEq = null;
+let gameDuration = 15;
+let starDiv = 3;            // 多少分换 1 颗星（越大越难）
+// 射击类游戏状态
+let bullets = [], enemies = [], eBullets = [], lastShot = 0, flash = 0, shooterSpeed = 1;
+
+// 射击类奖励游戏配置（飞机大战 / 坦克大战）
+const SHOOTER = {
+  plane: {
+    title: "✈️ 飞机大战 ✈️", badge: "空战挑战 🛩️", bg: "#070b22", player: "🛩️",
+    foes: ["👾","🛸","👽"], move: "down", fireRate: 240, enemyFire: 0.010, spawn: 620,
+    desc: "自动开火！拖动底部移动飞机，击落来袭的外星战机，并躲开它们的子弹。敌机灵活、子弹密集，瞄准要快！"
+  },
+  tank: {
+    title: "🚜 坦克大战 🚜", badge: "陆战挑战 💥", bg: "#15110a", player: "🚜",
+    foes: ["🚙","🛻","🚐"], move: "cross", fireRate: 430, enemyFire: 0.012, spawn: 720,
+    desc: "自动开火！拖动底部移动坦克，炮弹笔直向上——敌方坦克横向移动，要算准提前量，同时躲开它们的炮火！"
+  }
+};
 
 function rand(lo,hi){ return Math.floor(Math.random()*(hi-lo+1))+lo; }
 
@@ -1376,9 +1421,22 @@ function genEq(){
 
 function initGame(weatherType, mode) {
   gameMode = mode || 'collect';
-  activeWeather = WEATHER_DATA[weatherType];
+  gameDuration = 15; starDiv = 3;
 
-  if (gameMode === 'mathmeteor') {
+  if (gameMode === 'plane' || gameMode === 'tank') {
+    const cfg = SHOOTER[gameMode];
+    shooterSpeed = 1 + Math.random() * 0.6;   // 每局速度随机，增加变化与难度
+    gameDuration = 20; starDiv = 4;           // 射击类更难换星
+    activeWeather = { color: cfg.bg, speedMult: 1, wind: 0, spawnRate: cfg.spawn, name: cfg.title };
+    $("overlayTitle").textContent = cfg.title;
+    $("weatherBadge").textContent = cfg.badge;
+    $("weatherBadge").style.backgroundColor = (gameMode === 'plane') ? 'var(--accent)' : '#8e6b1f';
+    $("gameDesc").textContent = cfg.desc;
+    $("gameWeather").textContent = (gameMode === 'plane') ? "空战 🛩️" : "陆战 🚜";
+    $("gameWeather").style.backgroundColor = $("weatherBadge").style.backgroundColor;
+  }
+  else if (gameMode === 'mathmeteor') {
+    activeWeather = WEATHER_DATA[weatherType];
     mathEq = genEq();
     $("overlayTitle").textContent = "🌠 数字陨石 🌠";
     $("weatherBadge").textContent = "心算挑战 🧮";
@@ -1387,6 +1445,7 @@ function initGame(weatherType, mode) {
     $("gameWeather").textContent = `算式: ${mathEq.text}`;
     $("gameWeather").style.backgroundColor = 'var(--accent)';
   } else {
+    activeWeather = WEATHER_DATA[weatherType];
     $("overlayTitle").textContent = "🛸 宇宙星空漫游 🛸";
     $("weatherBadge").textContent = activeWeather.name;
     $("weatherBadge").style.backgroundColor =
@@ -1399,8 +1458,8 @@ function initGame(weatherType, mode) {
   }
 
   $("gameStars").textContent = "0";
-  $("gameTimer").textContent = "15";
-  
+  $("gameTimer").textContent = gameDuration;
+
   show("game-screen");
   $("gameStartOverlay").style.display = "flex";
   
@@ -1458,13 +1517,14 @@ $("startGameBtn").onclick = () => {
 function startGame() {
   gameActive = true;
   gameScore = 0;
-  gameTimeLeft = 15;
+  gameTimeLeft = gameDuration;
   gameItems = [];
+  bullets = []; enemies = []; eBullets = []; lastShot = 0; flash = 0;
   lastSpawnTime = Date.now();
-  
+
   Sound.playSfx("fanfare");
-  
-  // Start 15s Timer
+
+  // Start countdown Timer
   if (gameTimerInterval) clearInterval(gameTimerInterval);
   gameTimerInterval = setInterval(() => {
     gameTimeLeft--;
@@ -1512,7 +1572,14 @@ function spawnItem() {
 
 function gameLoop() {
   if (!gameActive) return;
-  
+
+  // 射击类游戏走独立逻辑
+  if (gameMode === 'plane' || gameMode === 'tank') {
+    updateShooter();
+    gameLoopId = requestAnimationFrame(gameLoop);
+    return;
+  }
+
   // 1. Clear with motion blur trail
   gameCtx.fillStyle = activeWeather.color;
   gameCtx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
@@ -1664,38 +1731,166 @@ function updatePopTexts() {
   }
 }
 
+/* ============================================================
+   "飞机大战 / 坦克大战" 射击类奖励游戏
+   ============================================================ */
+function spawnEnemy() {
+  const cfg = SHOOTER[gameMode];
+  const emoji = cfg.foes[rand(0, cfg.foes.length - 1)];
+  const tough = Math.random() < 0.28;              // ~28% 为耐打敌人（要打 2 下）
+  if (cfg.move === 'down') {
+    enemies.push({
+      x: rand(28, gameCanvas.width - 28), y: -20, emoji: emoji,
+      vy: (1.4 + Math.random() * 1.4) * shooterSpeed,
+      vx: (Math.random() - 0.5) * 2.4, phase: Math.random() * 100,
+      hp: tough ? 2 : 1, lastFire: Date.now()
+    });
+  } else { // cross：坦克横向移动
+    const fromLeft = Math.random() < 0.5;
+    enemies.push({
+      x: fromLeft ? -20 : gameCanvas.width + 20,
+      y: rand(40, 150), emoji: emoji,
+      vx: (fromLeft ? 1 : -1) * (1.3 + Math.random() * 1.6) * shooterSpeed,
+      vy: 0, phase: 0, hp: tough ? 2 : 1, lastFire: Date.now()
+    });
+  }
+}
+
+function updateShooter() {
+  const cfg = SHOOTER[gameMode];
+  const now = Date.now();
+  const W = gameCanvas.width, H = gameCanvas.height, py = H - 34;
+
+  // 背景
+  gameCtx.fillStyle = cfg.bg;
+  gameCtx.fillRect(0, 0, W, H);
+  gameCtx.fillStyle = "rgba(255,255,255,0.35)";
+  for (let i = 0; i < 18; i++) {
+    let yy = (now / 12 + i * 40) % H, xx = (i * 67) % W;
+    gameCtx.fillRect(xx, yy, 1.5, 1.5);
+  }
+
+  // 自动开火
+  if (now - lastShot > cfg.fireRate) {
+    bullets.push({ x: pandaX, y: py - 26 });
+    lastShot = now;
+    Sound.playSfx("laser");
+  }
+
+  // 生成敌人
+  if (now - lastSpawnTime > activeWeather.spawnRate) { spawnEnemy(); lastSpawnTime = now; }
+
+  // 玩家子弹（向上）
+  gameCtx.fillStyle = (gameMode === 'plane') ? "#f1c40f" : "#2ecc71";
+  for (let i = bullets.length - 1; i >= 0; i--) {
+    const b = bullets[i]; b.y -= 9;
+    gameCtx.fillRect(b.x - 2.5, b.y, 5, 14);
+    if (b.y < -16) { bullets.splice(i, 1); continue; }
+    // 命中敌人
+    for (let j = enemies.length - 1; j >= 0; j--) {
+      const en = enemies[j];
+      if (Math.abs(b.x - en.x) < 22 && Math.abs(b.y - en.y) < 22) {
+        bullets.splice(i, 1); en.hp--;
+        if (en.hp <= 0) {
+          gameScore += 1; Sound.playSfx("explosion");
+          popText("💥 +1", en.x, en.y); enemies.splice(j, 1);
+          $("gameStars").textContent = gameScore;
+        } else { popText("✦", en.x, en.y); }
+        break;
+      }
+    }
+  }
+
+  // 敌人移动 / 开火 / 绘制
+  gameCtx.font = "30px sans-serif";
+  gameCtx.textAlign = "center"; gameCtx.textBaseline = "middle";
+  for (let j = enemies.length - 1; j >= 0; j--) {
+    const en = enemies[j];
+    if (cfg.move === 'down') {
+      en.y += en.vy;
+      en.x += en.vx + Math.sin(now / 300 + en.phase) * 1.2;
+      if (en.x < 16 || en.x > W - 16) en.vx *= -1;
+      if (en.y > H + 24) { enemies.splice(j, 1); continue; }   // 漏掉不扣分，但失去得分机会
+    } else {
+      en.x += en.vx;
+      if (en.x < -30 || en.x > W + 30) { enemies.splice(j, 1); continue; }
+    }
+    // 敌人开火（向下）
+    if (Math.random() < cfg.enemyFire && en.y < H - 90) {
+      eBullets.push({ x: en.x, y: en.y + 14 });
+    }
+    if (en.hp > 1) {   // 耐打敌人加个红圈提示
+      gameCtx.strokeStyle = "rgba(231,76,60,0.9)"; gameCtx.lineWidth = 2;
+      gameCtx.beginPath(); gameCtx.arc(en.x, en.y, 19, 0, 7); gameCtx.stroke();
+    }
+    gameCtx.font = "30px sans-serif";
+    gameCtx.fillText(en.emoji, en.x, en.y);
+  }
+
+  // 敌人子弹（向下）
+  gameCtx.fillStyle = "#e74c3c";
+  for (let i = eBullets.length - 1; i >= 0; i--) {
+    const b = eBullets[i]; b.y += 5 + shooterSpeed;
+    gameCtx.fillRect(b.x - 2.5, b.y, 5, 13);
+    if (b.y > H + 16) { eBullets.splice(i, 1); continue; }
+    if (Math.abs(b.x - pandaX) < 22 && Math.abs(b.y - py) < 24) {
+      eBullets.splice(i, 1);
+      gameScore = Math.max(0, gameScore - 1); flash = 12;
+      Sound.playSfx("comet"); popText("-1", pandaX, py - 26);
+      $("gameStars").textContent = gameScore;
+    }
+  }
+
+  // 玩家（受击闪红）
+  if (flash > 0) {
+    gameCtx.fillStyle = "rgba(231,76,60,0.45)";
+    gameCtx.beginPath(); gameCtx.arc(pandaX, py, 26, 0, 7); gameCtx.fill();
+    flash--;
+  }
+  gameCtx.font = "38px sans-serif";
+  gameCtx.fillText(cfg.player, pandaX, py);
+
+  updatePopTexts();
+}
+
+// 把游戏内分数换算成奖励星星（更难：每 starDiv 分换 1 星，最多 8 星）
+function scoreToStars() { return Math.min(8, Math.floor(gameScore / starDiv)); }
+
 function endGame() {
   gameActive = false;
   clearInterval(gameTimerInterval);
   cancelAnimationFrame(gameLoopId);
-  
+
   Sound.playSfx("fanfare");
-  
-  // Add reward to player stars
-  save.stars += gameScore;
+
+  const earned = scoreToStars();
+  save.stars += earned;
   save.points += gameScore * 10;
   persist();
   refreshHud();
-  
+
   // Show end screen modal overlay inside canvas
   gameCtx.fillStyle = "rgba(10,10,30,0.92)";
   gameCtx.fillRect(0, 0, gameCanvas.width, gameCanvas.height);
-  
+
   gameCtx.fillStyle = "var(--gold)";
-  gameCtx.font = "bold 28px sans-serif";
-  gameCtx.fillText("🛸 漫游结束 🛸", gameCanvas.width / 2, gameCanvas.height / 2 - 40);
-  
+  gameCtx.font = "bold 26px sans-serif";
+  gameCtx.textAlign = "center"; gameCtx.textBaseline = "middle";
+  gameCtx.fillText("🏁 奖励关结束 🏁", gameCanvas.width / 2, gameCanvas.height / 2 - 46);
+
   gameCtx.fillStyle = "#fff";
   gameCtx.font = "18px sans-serif";
-  gameCtx.fillText(`你一共捕获了 ${gameScore} 颗额外星星！`, gameCanvas.width / 2, gameCanvas.height / 2 + 10);
+  gameCtx.fillText(`本局得分 ${gameScore} 分`, gameCanvas.width / 2, gameCanvas.height / 2 - 12);
+  gameCtx.fillStyle = "var(--gold)";
+  gameCtx.font = "bold 22px sans-serif";
+  gameCtx.fillText(earned > 0 ? `获得 ${earned} 颗额外星星 ⭐` : "差一点点，没拿到星星！", gameCanvas.width / 2, gameCanvas.height / 2 + 22);
   gameCtx.fillStyle = "rgba(255,255,255,0.7)";
-  gameCtx.font = "14px sans-serif";
-  gameCtx.fillText("积分奖励 +" + (gameScore * 10) + "！点击下方按钮返回。", gameCanvas.width / 2, gameCanvas.height / 2 + 45);
-  
+  gameCtx.font = "13px sans-serif";
+  gameCtx.fillText(`每 ${starDiv} 分换 1 星 · 积分 +${gameScore * 10}`, gameCanvas.width / 2, gameCanvas.height / 2 + 52);
+
   // Switch Done Screen Game Trigger Off
   $("bonusUnlockCard").style.display = "none";
-  
-  // Replace replay button with back button inside modal
+
   setTimeout(() => {
     openSubject(curSubj);
   }, 3200);
