@@ -144,6 +144,7 @@
       <span class="pill" id="hGrade" style="cursor:pointer; background:linear-gradient(135deg, var(--accent), #2980b9);">三年级 🔄</span>
       <span class="pill">⭐ <b id="hStars">0</b></span>
       <span class="pill">🏅 <b id="hPoints">0</b></span>
+      <span class="pill" id="reviewBtn" style="cursor:pointer; background:linear-gradient(135deg, #e74c3c, #c0392b);">📕 错题本 <b id="wrongCount">0</b></span>
       <span class="grow"></span>
       <span class="pill" id="soundToggle" style="cursor:pointer">🔊 音效: 开</span>
       <span class="pill" id="musicToggle" style="cursor:pointer">🎵 音乐: 开</span>
@@ -404,7 +405,11 @@ const SYLLABUS = {
             {q:"48 250 的近似数（凑整到最接近的千）是多少？", opts:["48 000","48 200","48 300","49 000"], a:0,
              why:["看百位上的数字 2，比 5 小，所以向下舍去（4舍）。","结果是 <b>48 000</b>。"], tip:"凑整看后一位：≥5 进一，<5 舍去。"},
             {q:"下列哪个数最大？", opts:["29 999","30 100","30 010","29 909"], a:1,
-             why:["先比万位，30 100 和 30 010 比 29 999 大。","再比百位：30 100 的百位是 1，比 30 010 的 0 大。"], tip:"比大小：从最高位（左边）开始比。"}
+             why:["先比万位，30 100 和 30 010 比 29 999 大。","再比百位：30 100 的百位是 1，比 30 010 的 0 大。"], tip:"比大小：从最高位（左边）开始比。"},
+            {q:"把 36 472 凑整到最接近的万，得多少？", opts:["30 000","36 000","40 000","37 000"], a:2,
+             why:["凑整到万要看<b>千位</b>上的数字。","36 472 的千位是 6，6 ≥ 5 所以向上进一，万位 3 变 4。","结果是 <b>40 000</b>。"], tip:"凑整到万看千位：≥5 进一，<5 舍去。"},
+            {q:"60 000 + 3 000 + 200 + 9 合起来是哪个数？", opts:["63 209","60 329","63 029","6 329"], a:0,
+             why:["六万是 6 万位，三千是千位，二百是百位，九是个位，十位没有数用 0 占位。","合起来是 <b>63 209</b>。"], tip:"按数位分别填，缺的数位写 0。"}
           ]},
           addsub:{ name:"加法与减法", icon:"➕", qs:[
             {q:"3 450 + 2 680 = ?", opts:["6 030","6 130","6 230","5 130"], a:1,
@@ -428,7 +433,9 @@ const SYLLABUS = {
             {q:"96 ÷ 4 = ?", opts:["22","24","26","28"], a:1,
              why:["把 96 平均分成 4 份。先 9 ÷ 4 = 2 余 1，再 16 ÷ 4 = 4。","结果是 <b>24</b>。"], tip:"验算：24 × 4 = 96。"},
             {q:"老师把 45 颗糖平均分给 7 个学生，每人几颗、剩几颗？", opts:["6 颗 余 3","6 颗 余 5","5 颗 余 10","7 颗 余 0"], a:0,
-             why:["45 ÷ 7：7 × 6 = 42，最接近且不超过 45。","45 − 42 = 3，所以每人 <b>6 颗，余 3 颗</b>。"], tip:"余数一定要比除数小。"}
+             why:["45 ÷ 7：7 × 6 = 42，最接近且不超过 45。","45 − 42 = 3，所以每人 <b>6 颗，余 3 颗</b>。"], tip:"余数一定要比除数小。"},
+            {q:"144 名学生平均分成 6 队，每队几人？", opts:["22 人","24 人","26 人","28 人"], a:1,
+             why:["144 ÷ 6：先 14 ÷ 6 = 2 余 2，把余 2 与 4 合成 24，24 ÷ 6 = 4。","所以每队 <b>24 人</b>。验算：24 × 6 = 144。"], tip:"除法从最高位除起，除不尽就把余数往后带。"}
           ]},
           fraction:{ name:"分数", icon:"🍕", qs:[
             {q: "一个比萨切成 8 块，吃掉 3 块，吃掉了几分之几？", opts:["3/5","5/8","3/8","8/3"], a:2,
@@ -771,6 +778,7 @@ function base(){
     grade: null,         // "std3" or "std4"
     completed: {},       // Record completed topics: { "std4.math.place": true }
     best: {},            // Best star ratings: { "std4.math.place": 3 }
+    wrong: [],           // 错题本：答错的题 [{nkey, g, sName, tName, q, opts, a, why, tip}]
     muted: false,
     musicMuted: false
   };
@@ -987,12 +995,31 @@ function refreshHud(){
   if (save.grade) {
     $("hGrade").textContent = `${SYLLABUS[save.grade].name} 🔄`;
   }
+  $("wrongCount").textContent = save.wrong.length;
   Sound.updateButtons();
 }
 
 let curSubj=null, curTopic=null, queue=[], idx=0, correct=0, streak=0, answered=false;
 let maxStreakInSession=0;
 let unlockedBonusThisQuiz=false;
+let reviewMode=false;        // 错题本复习模式：不奖星、不扣星，答对则移出错题本
+let reviewMastered=0;        // 本次复习答对（已掌握）的题数
+
+// 错题本：记录一道答错的题（去重）
+function recordWrong(item){
+  const nkey=`${save.grade}.${curSubj}.${curTopic}::${item.q}`;
+  if(save.wrong.some(w=>w.nkey===nkey)) return;
+  const subj=SYLLABUS[save.grade].subjects[curSubj];
+  save.wrong.push({nkey, g:save.grade, sName:subj.name, tName:subj.topics[curTopic].name,
+                   q:item.q, opts:item.opts.slice(), a:item.a, why:item.why, tip:item.tip});
+}
+// 答对后把该题移出错题本（在任何模式下都算掌握）
+function clearWrong(item){
+  const nkey=item.nkey || `${save.grade}.${curSubj}.${curTopic}::${item.q}`;
+  const before=save.wrong.length;
+  save.wrong=save.wrong.filter(w=>w.nkey!==nkey);
+  return save.wrong.length<before;
+}
 
 // Unlock AudioContext on body click
 document.body.addEventListener('click', () => {
@@ -1005,6 +1032,12 @@ $("btnStd4").onclick = () => openGrade("std4");
 $("hGrade").onclick = () => {
   Sound.playSfx("star");
   show("grade-select");
+};
+
+// 错题本入口
+$("reviewBtn").onclick = () => {
+  if(!save.wrong.length){ Sound.playSfx("star"); popEmoji("🎉 暂无错题"); return; }
+  startReview();
 };
 
 // Bind Sound/Music Toggles
@@ -1116,7 +1149,7 @@ function shuffle(arr){
 function shuffleOptions(item){
   const correctText=item.opts[item.a];
   const opts=shuffle(item.opts.slice());
-  return {q:item.q, opts:opts, a:opts.indexOf(correctText), why:item.why, tip:item.tip};
+  return {...item, opts:opts, a:opts.indexOf(correctText)};
 }
 
 function startQuiz(sk,tk){
@@ -1126,15 +1159,33 @@ function startQuiz(sk,tk){
   idx=0; correct=0; streak=0; maxStreakInSession=0;
   unlockedBonusThisQuiz=false;
   
+  reviewMode=false;
   $("qTot").textContent=queue.length;
   $("qTag").textContent=SYLLABUS[save.grade].subjects[sk].name+" · "+SYLLABUS[save.grade].subjects[sk].topics[tk].name;
-  show("quiz"); 
+  show("quiz");
+  renderQ();
+}
+
+// 错题本复习：从 save.wrong 取题，重新打乱选项后逐题复习
+function startReview(){
+  if(!save.wrong.length){ popEmoji("🎉 没有错题"); return; }
+  reviewMode=true;
+  reviewMastered=0;
+  // 最多复习 10 题，优先复习当前年级的错题
+  const pool=save.wrong.slice().sort((a,b)=>(a.g===save.grade?-1:1)-(b.g===save.grade?-1:1));
+  queue=shuffle(pool.slice(0,10)).map(shuffleOptions);
+  idx=0; correct=0; streak=0; maxStreakInSession=0; unlockedBonusThisQuiz=false;
+  $("qTot").textContent=queue.length;
+  $("qTag").textContent="📕 错题本复习（答对即移出，不扣星）";
+  Sound.playSfx("star");
+  show("quiz");
   renderQ();
 }
 
 function renderQ(){
   answered=false;
   const item=queue[idx];
+  if(reviewMode && item.sName){ $("qTag").textContent=`📕 错题复习 · ${item.sName}·${item.tName}`; }
   $("qNum").textContent=idx+1;
   $("streak").textContent=streak;
   $("progBar").style.width=(idx/queue.length*100)+"%";
@@ -1167,40 +1218,51 @@ function choose(i,btn){
   if(i===item.a){
     correct++; streak++;
     maxStreakInSession = Math.max(maxStreakInSession, streak);
-    save.points+=10;
-    popEmoji(streak>=3?"🔥":"⭐");
     Sound.playSfx("correct");
-    
-    // Check if 5-streak triggers bonus ticket
-    if (streak === 5) {
-      unlockedBonusThisQuiz = true;
-      popEmoji("🛸 奖励券!");
+
+    if(reviewMode){
+      // 复习模式：不加分、不奖星，但把题目移出错题本（已掌握）
+      clearWrong(item);
+      reviewMastered++;
+      popEmoji("✅ 已掌握");
+    } else {
+      save.points+=10;
+      popEmoji(streak>=3?"🔥":"⭐");
+      clearWrong(item); // 闯关时答对也算掌握，移出错题本
+      // Check if 5-streak triggers bonus ticket
+      if (streak === 5) {
+        unlockedBonusThisQuiz = true;
+        popEmoji("🛸 奖励券!");
+      }
     }
-    
+
     ex.className="explain ok show";
     ex.innerHTML=`<h3>✅ 答对了！太棒了</h3><p class="lead">为什么是「${item.opts[item.a]}」：</p>`
       + item.why.map(p=>`<p>${p}</p>`).join("")
       + (item.tip?`<div class="tip">💡 记忆诀窍：${item.tip}</div>`:"");
   } else {
-    // Answered wrongly penalty - deduct a star immediately!
-    streak=0; 
+    streak=0;
     Sound.playSfx("wrong");
-    
-    let deducted = false;
-    if (save.stars > 0) {
-      save.stars--;
-      deducted = true;
+
+    if(reviewMode){
+      // 复习模式：答错不扣星，但题目继续留在错题本里
+      popEmoji("❌ 再想想");
+    } else {
+      // 闯关模式答错立即扣 1 颗星，并记入错题本
+      let deducted = false;
+      if (save.stars > 0) { save.stars--; deducted = true; }
+      popEmoji(deducted ? "⚠️ 星星 -1" : "❌ 答错了");
+      recordWrong(item);
     }
-    popEmoji(deducted ? "⚠️ 星星 -1" : "❌ 答错了");
-    
+
     ex.className="explain no show";
     ex.innerHTML=`<h3>❌ 答错了，再接再厉！正确答案是「${item.opts[item.a]}」</h3><p class="lead">讲解：</p>`
       + item.why.map(p=>`<p>${p}</p>`).join("")
       + (item.tip?`<div class="tip">💡 记忆诀窍：${item.tip}</div>`:"");
   }
-  
+
   $("streak").textContent=streak;
-  persist(); 
+  persist();
   refreshHud();
   $("nextBtn").style.display="block";
   $("nextBtn").textContent = (idx===queue.length-1)?"看成绩 🏆":"下一题 ➡";
@@ -1215,6 +1277,26 @@ $("nextBtn").onclick=()=>{
 function finish(){
   $("progBar").style.width="100%";
   const total=queue.length;
+
+  // 复习模式：单独结算，不奖星、不解锁奖励关
+  if(reviewMode){
+    persist(); refreshHud();
+    const remain=save.wrong.length;
+    $("rStars").textContent = remain===0 ? "🏆" : "📕";
+    $("rFace").textContent = remain===0 ? "🎯" : "💪";
+    $("rTitle").textContent = remain===0 ? "错题全部攻克！" : "复习完成";
+    $("rScore").textContent=`本次掌握 ${reviewMastered} / ${total} 道错题`;
+    $("rMsg").innerHTML = remain===0
+      ? "太厉害了！错题本已经清空，继续保持哦！"
+      : `错题本还剩 <b>${remain}</b> 道题。多复习几次，把它们全部变成会做的题吧！`;
+    $("bonusUnlockCard").style.display="none";
+    $("rReplay").style.display = remain>0 ? "" : "none";
+    $("rReplay").textContent = "再复习一遍";
+    show("done");
+    if(remain===0){ burst(); Sound.playSfx("fanfare"); }
+    return;
+  }
+
   // 更高难度：满分才 3 星，≥80% 得 2 星，≥60% 得 1 星，否则 0 星
   let stars = correct===total?3 : correct>=Math.ceil(total*0.8)?2 : correct>=Math.ceil(total*0.6)?1:0;
   
@@ -1277,7 +1359,10 @@ function finish(){
   } else {
     $("bonusUnlockCard").style.display = "none";
   }
-  
+
+  // 复原“再玩一次”按钮（复习模式可能改过它）
+  $("rReplay").style.display = ""; $("rReplay").textContent = "再玩一次";
+
   show("done");
   if(stars===3) {
     burst();
@@ -1289,9 +1374,9 @@ function finish(){
    UI Buttons Binding
    ============================================================ */
 $("backHome").onclick=()=>{ renderHome(); show("home"); };
-$("quitQuiz").onclick=()=>{ openSubject(curSubj); };
-$("rReplay").onclick=()=> startQuiz(curSubj,curTopic);
-$("rBack").onclick=()=> openSubject(curSubj);
+$("quitQuiz").onclick=()=>{ if(reviewMode){ reviewMode=false; renderHome(); show("home"); } else { openSubject(curSubj); } };
+$("rReplay").onclick=()=> { if(reviewMode) startReview(); else startQuiz(curSubj,curTopic); };
+$("rBack").onclick=()=> { if(reviewMode){ reviewMode=false; renderHome(); show("home"); } else { openSubject(curSubj); } };
 $("rGameBtn").onclick=()=> {
   // 每次随机选择不同的奖励游戏，玩法不重复（避免连续两次相同）
   const modes = ['collect', 'mathmeteor', 'plane', 'tank'];
