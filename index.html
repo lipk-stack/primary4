@@ -91,6 +91,27 @@
   .learnCard h3{margin:0 0 6px; font-size:18px; color:#2c3e50; display:flex; align-items:center; gap:8px;}
   .learnCard p{margin:0; font-size:15px; line-height:1.7; color:#34495e;}
   .learnCard .num{background:var(--accent); color:#fff; border-radius:50%; width:26px; height:26px; display:inline-flex; align-items:center; justify-content:center; font-size:14px; flex:0 0 26px;}
+  .learnCard .eg{margin-top:10px; background:#eef6fb; border-left:5px solid var(--accent); border-radius:8px; padding:10px 12px; font-size:14px; line-height:1.7; color:#2c3e50;}
+
+  /* 成就徽章 */
+  .badge{opacity:.55; filter:grayscale(0.7);}
+  .badge.got{opacity:1; filter:none; border-color:var(--gold); box-shadow:0 0 16px rgba(241,196,15,0.35), var(--shadow);}
+  .badge .pg{color:#9b59b6;}
+  .badge.got .pg{color:#27ae60;}
+  .badgeToast{position:fixed; left:50%; top:14%; transform:translate(-50%,-30px); z-index:70; display:none; align-items:center; gap:12px; background:linear-gradient(135deg,#fff,#fff7d6); border:2px solid var(--gold); border-radius:18px; padding:12px 18px; box-shadow:0 12px 32px rgba(0,0,0,0.3); max-width:88vw; color:#2c3e50;}
+  .badgeToast.show{display:flex; animation:toastIn .4s cubic-bezier(0.175,0.885,0.32,1.275);}
+  .badgeToast .tIco{font-size:40px; filter:drop-shadow(0 3px 5px rgba(0,0,0,0.15));}
+  .badgeToast b{font-size:15px;} .badgeToast div div{font-size:13px; color:#555; margin-top:2px;}
+  @keyframes toastIn{from{opacity:0; transform:translate(-50%,-30px);} to{opacity:1; transform:translate(-50%,0);}}
+
+  /* 知识配对（记忆翻牌） */
+  .memGrid{display:grid; grid-template-columns:repeat(4,1fr); gap:clamp(6px,1.4vw,12px);}
+  .memCard{aspect-ratio:3/4; border:none; border-radius:14px; cursor:pointer; font-size:clamp(13px,2.4vw,17px); font-weight:800; padding:6px; line-height:1.25; color:#fff; background:linear-gradient(135deg,var(--accent),#2980b9); box-shadow:0 4px 0 rgba(0,0,0,.18); transition:transform .12s; display:flex; align-items:center; justify-content:center; text-align:center;}
+  .memCard:active{transform:scale(.96);}
+  .memCard.open{background:var(--soft); color:#2c3e50; box-shadow:inset 0 0 0 3px var(--accent);}
+  .memCard.done{background:#e8f8f0; color:#27ae60; box-shadow:inset 0 0 0 3px var(--good); cursor:default;}
+  .memResult{position:absolute; inset:0; background:rgba(10,10,30,0.92); border-radius:24px; display:none; flex-direction:column; justify-content:center; align-items:center; text-align:center; color:#fff; padding:20px;}
+  @media(min-width:560px){ .memGrid{grid-template-columns:repeat(6,1fr);} }
 
   /* 结算页 */
   .result{text-align:center; padding:30px 20px;}
@@ -122,6 +143,7 @@
 <body>
 <canvas id="stars"></canvas>
 <div class="pop" id="pop">⭐</div>
+<div class="badgeToast" id="badgeToast"></div>
 <div class="app">
 
   <!-- ===== 年级选择 ===== -->
@@ -154,6 +176,7 @@
       <span class="pill">⭐ <b id="hStars">0</b></span>
       <span class="pill">🏅 <b id="hPoints">0</b></span>
       <span class="pill" id="reviewBtn" style="cursor:pointer; background:linear-gradient(135deg, #e74c3c, #c0392b);">📕 错题本 <b id="wrongCount">0</b></span>
+      <span class="pill" id="badgeBtn" style="cursor:pointer; background:linear-gradient(135deg, #9b59b6, #8e44ad);">🏆 成就 <b id="badgeMini">0</b></span>
       <span class="grow"></span>
       <span class="pill" id="soundToggle" style="cursor:pointer">🔊 音效: 开</span>
       <span class="pill" id="musicToggle" style="cursor:pointer">🎵 音乐: 开</span>
@@ -222,7 +245,7 @@
       <!-- 奖励关卡激活卡片 -->
       <div id="bonusUnlockCard" style="display:none; margin: 18px 0; padding:16px; border:2px dashed var(--gold); border-radius:18px; background:linear-gradient(180deg, #fffcf0, #fff7d6); animation: pulse 2s infinite;">
         <h3 style="color:#e67e22; margin:0 0 6px 0; font-size:18px;">🎁 解锁奖励关卡！</h3>
-        <p style="font-size:14px; margin:0 0 12px 0; color:#666;">你达成了成就，随机开启一款 <b>奖励小游戏</b>（太空漫游 / 数字陨石 / 飞机大战 / 坦克大战）—— 每次都不一样，闯得越好星星越多！</p>
+        <p style="font-size:14px; margin:0 0 12px 0; color:#666;">你达成了成就，随机开启一款 <b>奖励小游戏</b>（太空漫游 / 数字陨石 / 飞机大战 / 坦克大战 / 知识配对）—— 每次都不一样，闯得越好星星越多！</p>
         <button class="btn primary" id="rGameBtn" style="background: linear-gradient(135deg, #f39c12, #e67e22);">🎮 开始挑战 🎮</button>
       </div>
 
@@ -252,6 +275,33 @@
     <div class="footnote" style="color:#a9c2f0; text-shadow: none; margin-top: 8px;">
       操作方法：在屏幕上左右拖动来移动。捕捉类游戏接住星星；射击类游戏（飞机/坦克）会自动开火，瞄准敌人并躲开它们的炮火！
     </div>
+  </section>
+
+  <!-- ===== 🃏 知识配对（记忆翻牌）奖励游戏 ===== -->
+  <section id="memory-screen" class="screen">
+    <div class="qtop" style="margin-bottom: 8px;">
+      <span class="pill">⏱️ 倒计时: <b id="memTimer">45</b>秒</span>
+      <span class="pill" style="background: var(--accent);">🃏 知识配对</span>
+      <span class="pill" style="background: var(--gold); color:#000;">✅ 配对: <b id="memMatched">0 / 6</b></span>
+    </div>
+    <div class="card" style="position:relative; padding:14px;">
+      <p style="text-align:center;margin:0 0 12px;font-size:14px;color:#7f8c8d;font-weight:700;">翻开两张牌，把"知识点"和它的"配对"连成一对！配对成功 +分，全部翻对额外撒花。</p>
+      <div id="memGrid" class="memGrid"></div>
+      <div id="memResult" class="memResult"></div>
+    </div>
+    <div class="footnote" style="color:#a9c2f0; text-shadow:none;">每局随机抽题、随机洗牌，玩法每次不同 · 每 2 对换 1 颗星星</div>
+  </section>
+
+  <!-- ===== 🏆 成就徽章 ===== -->
+  <section id="badges" class="screen">
+    <div class="hud">
+      <span class="pill" id="badgeBack" style="cursor:pointer">⬅ 返回主页</span>
+      <span class="grow"></span>
+      <span class="pill" style="background:linear-gradient(135deg,#9b59b6,#8e44ad);">🏆 <b id="badgeCount">0 / 10</b></span>
+    </div>
+    <h1 style="font-size:28px">🏆 成就徽章 🏆</h1>
+    <p class="sub">努力学习、闯关、玩奖励游戏，集齐所有徽章吧！</p>
+    <div class="grid" id="badgeGrid"></div>
   </section>
 
 </div>
@@ -323,7 +373,9 @@ const SYLLABUS = {
               {q: "“自相矛盾” 中的“矛”和“盾”分别指什么？", opts: ["攻击用的长枪和防守用的盾牌", "盾牌和弓箭", "长枪 and 宝剑", "宝剑 and 盔甲"], a: 0,
                why: ["“矛”是古代用来进攻的刺兵器（长矛）；“盾”是防御用的盾牌。","成语比喻自己的言行前后不一致，互相冲突。"], tip: "矛是攻，盾是守。"},
               {q: "“亡羊补牢” 这个成语的意思是？", opts: ["羊全部丢光了没办法", "出了问题后及时补救，还不算晚", "养羊要修好羊圈", "做事要趁早"], a: 1,
-               why: ["羊跑掉后赶紧修补羊圈，就能防止其他羊再丢。","比喻<b>出了差错后及时补救，还来得及</b>。"], tip: "“为时未晚”——犯错后肯改、肯补救就好。"}
+               why: ["羊跑掉后赶紧修补羊圈，就能防止其他羊再丢。","比喻<b>出了差错后及时补救，还来得及</b>。"], tip: "“为时未晚”——犯错后肯改、肯补救就好。"},
+              {q: "“一举两得” 这个成语形容什么？", opts: ["做一件事却失败两次", "做一件事同时得到两种好处", "举手两次", "两个人合作"], a: 1,
+               why: ["“一举”是做一件事，“两得”是得到两样好处。","比喻<b>做一件事同时收获两种好处</b>，跟“一箭双雕”意思相近。"], tip: "联想近义成语：一举两得 ≈ 一箭双雕。"}
             ]
           },
           grammar: {
@@ -433,7 +485,9 @@ const SYLLABUS = {
             {q:"60 000 + 3 000 + 200 + 9 合起来是哪个数？", opts:["63 209","60 329","63 029","6 329"], a:0,
              why:["六万是 6 万位，三千是千位，二百是百位，九是个位，十位没有数用 0 占位。","合起来是 <b>63 209</b>。"], tip:"按数位分别填，缺的数位写 0。"},
             {q:"用 3、0、5、7、9 这五个数字各一次，能组成的最大五位数是？", opts:["97 530","99 753","75 930","97 503"], a:0,
-             why:["要让数最大，就把大的数字放在高位。","从大到小排：9、7、5、3、0，所以最大是 <b>97 530</b>。"], tip:"组最大数：大数字放高位；组最小数则相反（但 0 不能放首位）。"}
+             why:["要让数最大，就把大的数字放在高位。","从大到小排：9、7、5、3、0，所以最大是 <b>97 530</b>。"], tip:"组最大数：大数字放高位；组最小数则相反（但 0 不能放首位）。"},
+            {q:"用 4、0、6、2 这四个数字各一次，能组成的<b>最小</b>四位数是？", opts:["0 246","2 046","2 064","4 026"], a:1,
+             why:["要让数最小就把小数字放高位，但<b>0 不能放在最高位</b>（否则就不是四位数了）。","所以千位放第二小的 2，其余从小到大：0、4、6，得 <b>2 046</b>。"], tip:"组最小数：0 不能打头，要把次小的数字放最高位。"}
           ]},
           addsub:{ name:"加法与减法", icon:"➕", qs:[
             {q:"3 450 + 2 680 = ?", opts:["6 030","6 130","6 230","5 130"], a:1,
@@ -455,7 +509,9 @@ const SYLLABUS = {
             {q:"一本故事书 15 令吉，老师买了 24 本送给图书馆，一共要付多少钱？", opts:["RM 320","RM 360","RM 240","RM 380"], a:1,
              why:["每本 15，共 24 本，用乘法：15 × 24。","15 × 20 = 300，15 × 4 = 60，合起来 <b>360</b>，即 RM 360。"], tip:"拆成 ×20 和 ×4 再相加，更容易算。"},
             {q:"每箱汽水有 24 瓶，一辆货车装了 36 箱，一共有多少瓶汽水？", opts:["764","864","964","666"], a:1,
-             why:["用乘法：24 × 36。","拆开算：24 × 30 = 720，24 × 6 = 144，720 + 144 = <b>864</b> 瓶。"], tip:"两位数乘两位数：拆成 ×几十 加 ×几，再相加。"}
+             why:["用乘法：24 × 36。","拆开算：24 × 30 = 720，24 × 6 = 144，720 + 144 = <b>864</b> 瓶。"], tip:"两位数乘两位数：拆成 ×几十 加 ×几，再相加。"},
+            {q:"一包练习簿有 12 本，老师买了 15 包，平均分给 9 个班级，每班分到多少本？", opts:["18 本","20 本","22 本","24 本"], a:1,
+             why:["先求总数：12 × 15 = 180 本。","再平均分：180 ÷ 9 = <b>20</b> 本。"], tip:"三步题：先乘出总数，再用除法平均分。"}
           ]},
           divide:{ name:"除法", icon:"➗", qs:[
             {q:"96 ÷ 4 = ?", opts:["22","24","26","28"], a:1,
@@ -465,7 +521,9 @@ const SYLLABUS = {
             {q:"144 名学生平均分成 6 队，每队几人？", opts:["22 人","24 人","26 人","28 人"], a:1,
              why:["144 ÷ 6：先 14 ÷ 6 = 2 余 2，把余 2 与 4 合成 24，24 ÷ 6 = 4。","所以每队 <b>24 人</b>。验算：24 × 6 = 144。"], tip:"除法从最高位除起，除不尽就把余数往后带。"},
             {q:"一根 250 厘米长的绳子，每 8 厘米剪一段，最多能剪几段，还剩多少厘米？", opts:["31 段 余 2 厘米","30 段 余 10 厘米","32 段 余 0 厘米","31 段 余 6 厘米"], a:0,
-             why:["250 ÷ 8：8 × 31 = 248，最接近且不超过 250。","250 − 248 = 2，所以最多剪 <b>31 段，还剩 2 厘米</b>（剩下的 2 厘米不够再剪一段）。"], tip:"“最多能分几”用除法，余下不够一份的就是余数。"}
+             why:["250 ÷ 8：8 × 31 = 248，最接近且不超过 250。","250 − 248 = 2，所以最多剪 <b>31 段，还剩 2 厘米</b>（剩下的 2 厘米不够再剪一段）。"], tip:"“最多能分几”用除法，余下不够一份的就是余数。"},
+            {q:"一辆车每 4 个人一组坐，要送 50 个人，至少需要安排几辆车？", opts:["12 辆","12 辆余 2 人","13 辆","14 辆"], a:2,
+             why:["50 ÷ 4 = 12 组……余 2 人。","余下的 2 人也要坐车，所以要<b>多加一辆</b>：12 + 1 = <b>13 辆</b>。"], tip:"“至少要几个”这类题，有余数就要把商再加 1（进一法）。"}
           ]},
           fraction:{ name:"分数", icon:"🍕", qs:[
             {q: "一个比萨切成 8 块，吃掉 3 块，吃掉了几分之几？", opts:["3/5","5/8","3/8","8/3"], a:2,
@@ -532,7 +590,9 @@ const SYLLABUS = {
             {q:"“宽阔” 的反义词是？", opts:["狭窄","广大","遥远","平坦"], a:0,
              why:["宽阔指又宽又大；相反的是“狭窄”（又窄又小）。"], tip:"想象画面：宽↔窄。"},
             {q:"“陌生” 的反义词是？", opts:["生疏","熟悉","奇怪","遥远"], a:1,
-             why:["“陌生”指不认识、没接触过；相反的是“熟悉”（很了解、常接触）。","“生疏”与“陌生”意思相近，是近义词，不是反义词。"], tip:"小心区分：意思相反才是反义词，意思相近的是近义词。"}
+             why:["“陌生”指不认识、没接触过；相反的是“熟悉”（很了解、常接触）。","“生疏”与“陌生”意思相近，是近义词，不是反义词。"], tip:"小心区分：意思相反才是反义词，意思相近的是近义词。"},
+            {q:"“骄傲（自满）” 的反义词是？", opts:["谦虚","自大", "高傲","得意"], a:0,
+             why:["这里的“骄傲”指自满、看不起别人；相反的是“<b>谦虚</b>”（不自满、肯听别人意见）。","“自大、高傲、得意”都与骄傲意思相近，是干扰项。"], tip:"先想清楚词的意思，再找意思完全相反的那个。"}
           ]},
           jinyi:{ name:"近义词", icon:"🟰", qs:[
             {q:"“美丽” 的近义词是？", opts:["丑陋","漂亮","干净","高大"], a:1,
@@ -577,7 +637,9 @@ const SYLLABUS = {
             {q:"湿衣服晾干，水到哪里去了？", opts:["渗进衣服","蒸发变成水蒸气","结成冰","变成固体"], a:1,
              why:["水受热蒸发，变成看不见的水蒸气飞到空气中，衣服就干了。"], tip:"蒸发：液态的水 → 气态的水蒸气。"},
             {q:"清晨草叶上出现小水珠（露水），这是水蒸气发生了什么变化？", opts:["蒸发（液→气）","凝结（气→液）","凝固（液→固）","融化（固→液）"], a:1,
-             why:["空气中的水蒸气（气态）遇到冷的草叶，冷却后变回小水珠（液态），这叫<b>凝结</b>。","它和蒸发正好相反。"], tip:"遇冷变水珠＝凝结；受热变水蒸气＝蒸发。"}
+             why:["空气中的水蒸气（气态）遇到冷的草叶，冷却后变回小水珠（液态），这叫<b>凝结</b>。","它和蒸发正好相反。"], tip:"遇冷变水珠＝凝结；受热变水蒸气＝蒸发。"},
+            {q:"从冰箱拿出的冰块放在桌上慢慢变成水，这个变化叫什么？", opts:["凝固","蒸发","融化（熔化）","凝结"], a:2,
+             why:["冰（固态）吸收热量后变成水（液态），这叫<b>融化</b>。","它和水结冰（凝固）正好相反。"], tip:"固→液是融化；液→固是凝固，方向要分清。"}
           ]}
         }
       },
@@ -665,7 +727,8 @@ const LEARN = {
   "std3.math.numbers": [
     {h:"数位与数值", p:"从右往左，数位依次是<b>个位、十位、百位、千位</b>。同一个数字在不同数位代表的数值不同：7 408 里的 4 在百位，表示 <b>400</b>。"},
     {h:"读数与写数", p:"读到“零”表示中间某个数位上没有数，写数时要用 <b>0</b> 占位，例如“六千零二十七”写成 <b>6 027</b>，不能漏写中间的 0。"},
-    {h:"比较与估算", p:"比大小先看最高位；求“最接近”就算<b>差值</b>，差最小的最接近。"}
+    {h:"比较与估算", p:"比大小先看最高位；求“最接近”就算<b>差值</b>，差最小的最接近。",
+     eg:"哪个数最接近 8 900？算差值：8 900−8 895=5；8 910−8 900=10。差 5 < 差 10，所以 <b>8 895</b> 最接近。"}
   ],
   "std3.math.fraction": [
     {h:"真分数", p:"分子比分母小的分数叫<b>真分数</b>（如 2/5）；分子等于或大于分母（如 7/7、8/5）就不是真分数。"},
@@ -729,20 +792,24 @@ const LEARN = {
   ],
   "std4.math.divide": [
     {h:"除法的意义", p:"把总数<b>平均分</b>成若干份。可用乘法口诀去试商。"},
-    {h:"余数规则", p:"<b>余数一定要比除数小</b>。验算：商 × 除数 + 余数 = 被除数。"}
+    {h:"余数规则", p:"<b>余数一定要比除数小</b>。验算：商 × 除数 + 余数 = 被除数。",
+     eg:"一根绳子 26 米，每段剪 4 米，最多剪几段？26÷4=6 段……余 2 米。余下的 2 米不够再剪一段，所以最多剪 <b>6 段</b>。"}
   ],
   "std4.math.fraction": [
     {h:"分数的意义", p:"分数 = <b>取的份数 ÷ 总份数</b>。比萨切 8 块吃 3 块 = 3/8。"},
     {h:"同分子比大小", p:"分子相同时，<b>分母越小，每份越大</b>：1/2 > 1/3 > 1/4。"},
-    {h:"同分母加减", p:"<b>分母不变，分子相加减</b>：2/5 + 1/5 = 3/5。"}
+    {h:"同分母加减", p:"<b>分母不变，分子相加减</b>：2/5 + 1/5 = 3/5。",
+     eg:"一块蛋糕分成 9 份，吃掉 6 份还剩多少？整块是 9/9，9/9 − 6/9 = <b>3/9</b>。分母 9 不变，只把分子相减。"}
   ],
   "std4.math.money": [
     {h:"令吉与仙", p:"<b>100 仙 = RM 1</b>。仙满 100 要进位成令吉。"},
-    {h:"找钱", p:"“找回/找钱”用减法：付出的钱 − 价钱。RM 20 − RM 13.50 = RM 6.50。"}
+    {h:"找钱", p:"“找回/找钱”用减法：付出的钱 − 价钱。RM 20 − RM 13.50 = RM 6.50。",
+     eg:"买一本书 RM 8.70，付 RM 10，找回多少？RM 10.00 − RM 8.70 = <b>RM 1.30</b>。仙不够减时，向令吉借 1（=100 仙）。"}
   ],
   "std4.math.time": [
     {h:"时间换算", p:"<b>1 小时 = 60 分钟</b>。2 小时 30 分 = 150 分钟。"},
-    {h:"求结束时间", p:"分钟相加<b>满 60 进成 1 小时</b>。7:45 + 1 时 30 分 = 9:15。"}
+    {h:"求结束时间", p:"分钟相加<b>满 60 进成 1 小时</b>。7:45 + 1 时 30 分 = 9:15。",
+     eg:"10:45 出发，路上花 1 时 40 分，几点到？分钟：45+40=85 分=1 时 25 分。小时：10+1+1=12 时。所以 <b>12:25</b> 到。"}
   ],
   "std4.math.measure": [
     {h:"长度", p:"<b>1 米 = 100 厘米</b>；1 千米 = 1000 米。"},
@@ -829,6 +896,8 @@ function base(){
     completed: {},       // Record completed topics: { "std4.math.place": true }
     best: {},            // Best star ratings: { "std4.math.place": 3 }
     wrong: [],           // 错题本：答错的题 [{nkey, g, sName, tName, q, opts, a, why, tip}]
+    badges: {},          // 成就徽章：{ badgeId: true }
+    bonusPlayed: {},     // 玩过的奖励游戏：{ collect:true, memory:true, ... }（用于"游戏全能"徽章）
     muted: false,
     musicMuted: false
   };
@@ -1027,6 +1096,66 @@ const Sound = {
 };
 
 /* ============================================================
+   成就徽章系统 (Achievement Badges)
+   每达成里程碑解锁一枚徽章，给学生长期目标，越往后越难。
+   ============================================================ */
+const BADGES = [
+  {id:"firstStep", icon:"🌱", name:"启程",     desc:"完成第一个单元的闯关。"},
+  {id:"perfect",   icon:"💯", name:"满分高手", desc:"任意单元满分（3★）通关一次。"},
+  {id:"stars15",   icon:"⭐", name:"星星新星", desc:"累计获得 15 颗星星。"},
+  {id:"stars40",   icon:"🌟", name:"星光闪耀", desc:"累计获得 40 颗星星。"},
+  {id:"stars80",   icon:"✨", name:"星空大师", desc:"累计获得 80 颗星星。"},
+  {id:"streak8",   icon:"🔥", name:"连对达人", desc:"一次闯关中连续答对 8 题。"},
+  {id:"subjClear", icon:"📚", name:"科目通",   desc:"通关某一科目的全部单元。"},
+  {id:"wrongZero", icon:"🎯", name:"零错题",   desc:"把错题本里的题目全部攻克清空。"},
+  {id:"gamer",     icon:"🎮", name:"游戏全能", desc:"玩遍全部 5 款奖励小游戏。"},
+  {id:"bonusAce",  icon:"🚀", name:"奖励猎手", desc:"在一局奖励游戏里拿下 6 颗以上星星。"}
+];
+
+// 检查并解锁徽章。ctx 携带本次事件的瞬时信息（连对数、是否清空错题、奖励星数）。
+function checkBadges(ctx){
+  ctx = ctx || {};
+  const newly = [];
+  const award = id => { if(!save.badges[id]){ save.badges[id]=true; newly.push(id); } };
+
+  if(Object.keys(save.completed).length>=1) award("firstStep");
+  if(Object.values(save.best).some(v=>v>=3)) award("perfect");
+  if(save.stars>=15) award("stars15");
+  if(save.stars>=40) award("stars40");
+  if(save.stars>=80) award("stars80");
+  if((ctx.streak||0)>=8) award("streak8");
+  // 科目通：任一年级的任一科目全部单元都已完成
+  scan: for(const g of ["std3","std4"]){
+    const subs=SYLLABUS[g].subjects;
+    for(const sk in subs){
+      const tops=subs[sk].topics;
+      if(Object.keys(tops).every(tk=>save.completed[`${g}.${sk}.${tk}`])){ award("subjClear"); break scan; }
+    }
+  }
+  if(ctx.wrongCleared && save.wrong.length===0) award("wrongZero");
+  if(Object.keys(save.bonusPlayed||{}).length>=5) award("gamer");
+  if((ctx.bonusStars||0)>=6) award("bonusAce");
+
+  if(newly.length){ persist(); refreshHud(); showBadgeToast(newly); }
+  return newly;
+}
+
+// 解锁徽章时的祝贺弹幕（可叠加多枚），带号角音效
+function showBadgeToast(ids){
+  Sound.playSfx("fanfare");
+  const wrap=$("badgeToast");
+  ids.forEach((id,k)=>{
+    const b=BADGES.find(x=>x.id===id); if(!b) return;
+    setTimeout(()=>{
+      wrap.innerHTML=`<span class="tIco">${b.icon}</span><div><b>解锁新成就！</b><div>${b.name} — ${b.desc}</div></div>`;
+      wrap.classList.add("show");
+      Sound.playSfx("star");
+      setTimeout(()=>wrap.classList.remove("show"), 2600);
+    }, k*2900);
+  });
+}
+
+/* ============================================================
    页面导航 & UI 初始化
    ============================================================ */
 const $ = id => document.getElementById(id);
@@ -1046,7 +1175,24 @@ function refreshHud(){
     $("hGrade").textContent = `${SYLLABUS[save.grade].name} 🔄`;
   }
   $("wrongCount").textContent = save.wrong.length;
+  $("badgeMini").textContent = Object.keys(save.badges).length;
   Sound.updateButtons();
+}
+
+function renderBadges(){
+  const g=$("badgeGrid"); g.innerHTML="";
+  let got=0;
+  BADGES.forEach(b=>{
+    const has=!!save.badges[b.id]; if(has) got++;
+    const d=document.createElement("div");
+    d.className="tile badge"+(has?" got":"");
+    d.innerHTML=`<span class="ico">${has?b.icon:"🔒"}</span>
+      <div class="t">${b.name}</div>
+      <div class="d">${b.desc}</div>
+      <div class="pg">${has?"已解锁 ✓":"未解锁"}</div>`;
+    g.appendChild(d);
+  });
+  $("badgeCount").textContent=`${got} / ${BADGES.length}`;
 }
 
 let curSubj=null, curTopic=null, queue=[], idx=0, correct=0, streak=0, answered=false;
@@ -1083,6 +1229,10 @@ $("hGrade").onclick = () => {
   Sound.playSfx("star");
   show("grade-select");
 };
+
+// 成就徽章入口
+$("badgeBtn").onclick = () => { Sound.playSfx("star"); renderBadges(); show("badges"); };
+$("badgeBack").onclick = () => { renderHome(); show("home"); };
 
 // 错题本入口
 $("reviewBtn").onclick = () => {
@@ -1186,7 +1336,8 @@ function openLearn(sk,tk){
   cards.forEach((c,i)=>{
     const d=document.createElement("div");
     d.className="learnCard";
-    d.innerHTML=`<h3><span class="num">${i+1}</span>${c.h}</h3><p>${c.p}</p>`;
+    d.innerHTML=`<h3><span class="num">${i+1}</span>${c.h}</h3><p>${c.p}</p>`
+      + (c.eg?`<div class="eg"><b>例题：</b>${c.eg}</div>`:"");
     wrap.appendChild(d);
   });
   Sound.playSfx("star");
@@ -1353,6 +1504,7 @@ function finish(){
     $("bonusUnlockCard").style.display="none";
     $("rReplay").style.display = remain>0 ? "" : "none";
     $("rReplay").textContent = "再复习一遍";
+    checkBadges({wrongCleared:true});
     show("done");
     if(remain===0){ burst(); Sound.playSfx("fanfare"); }
     return;
@@ -1424,6 +1576,7 @@ function finish(){
   // 复原“再玩一次”按钮（复习模式可能改过它）
   $("rReplay").style.display = ""; $("rReplay").textContent = "再玩一次";
 
+  checkBadges({streak:maxStreakInSession});
   show("done");
   if(stars===3) {
     burst();
@@ -1440,13 +1593,15 @@ $("rReplay").onclick=()=> { if(reviewMode) startReview(); else startQuiz(curSubj
 $("rBack").onclick=()=> { if(reviewMode){ reviewMode=false; renderHome(); show("home"); } else { openSubject(curSubj); } };
 $("rGameBtn").onclick=()=> {
   // 每次随机选择不同的奖励游戏，玩法不重复（避免连续两次相同）
-  const modes = ['collect', 'mathmeteor', 'plane', 'tank'];
+  const modes = ['collect', 'mathmeteor', 'plane', 'tank', 'memory'];
   let pick;
   do { pick = modes[Math.floor(Math.random() * modes.length)]; }
   while (pick === save.lastBonus && Math.random() < 0.85);
   save.lastBonus = pick; persist();
 
-  if (pick === 'collect') {
+  if (pick === 'memory') {
+    initMemory();
+  } else if (pick === 'collect') {
     const weathers = ['normal', 'wind', 'storm', 'drift', 'anomaly'];
     initGame(weathers[Math.floor(Math.random() * weathers.length)], 'collect');
   } else {
@@ -2019,8 +2174,10 @@ function endGame() {
   const earned = scoreToStars();
   save.stars += earned;
   save.points += gameScore * 10;
+  save.bonusPlayed[gameMode] = true;
   persist();
   refreshHud();
+  checkBadges({bonusStars:earned});
 
   // Show end screen modal overlay inside canvas
   gameCtx.fillStyle = "rgba(10,10,30,0.92)";
@@ -2047,6 +2204,117 @@ function endGame() {
   setTimeout(() => {
     openSubject(curSubj);
   }, 3200);
+}
+
+/* ============================================================
+   🃏 知识配对（记忆翻牌）— 第 5 款奖励游戏
+   把"概念"和它的"配对"翻出来连成一对，既考记忆又复习知识点。
+   每局随机抽题、随机洗牌，所以每次都不一样。
+   ============================================================ */
+const MATCH_POOL = {
+  std3: [
+    ["1 米","100 厘米"], ["1 升","1000 毫升"], ["真分数","分子比分母小"],
+    ["3/10","小数 0.3"], ["守株待兔","妄想不劳而获"], ["自相矛盾","言行前后冲突"],
+    ["乳牙","小时候会脱落"], ["犬齿","撕裂食物"], ["狮子","肉食性"],
+    ["牛","草食性"], ["磁铁同极","互相排斥"], ["磁铁能吸","铁钉"],
+    ["如果……就……","假设关系"], ["不但……而且……","递进关系"]
+  ],
+  std4: [
+    ["1 千克","1000 克"], ["1 小时","60 分钟"], ["RM 1","100 仙"],
+    ["1 千米","1000 米"], ["画蛇添足","多此一举反坏事"], ["勤劳","懒惰（反义）"],
+    ["氵 三点水","与水有关"], ["木 字旁","与树木有关"], ["鱼","用鳃呼吸"],
+    ["蝌蚪","长成青蛙"], ["蒸发","液态变气态"], ["结冰","液态变固态"],
+    ["第一手资料","原始记录"], ["go 的过去式","went"]
+  ]
+};
+
+let memCards = [], memOpen = [], memMatched = 0, memTotal = 0, memBusy = false;
+let memTimeLeft = 0, memTimer = null;
+
+function initMemory(){
+  const pool = (MATCH_POOL[save.grade] || MATCH_POOL.std4).slice();
+  const pairs = shuffle(pool).slice(0, 6);          // 每局随机 6 对 = 12 张牌
+  memTotal = pairs.length;
+  memCards = [];
+  pairs.forEach((p,i)=>{ memCards.push({pid:i, txt:p[0]}); memCards.push({pid:i, txt:p[1]}); });
+  shuffle(memCards);
+  memOpen = []; memMatched = 0; memBusy = false;
+  memTimeLeft = 45;
+
+  $("memMatched").textContent = `0 / ${memTotal}`;
+  $("memTimer").textContent = memTimeLeft;
+  $("memResult").style.display = "none";
+  const g = $("memGrid"); g.innerHTML = "";
+  memCards.forEach((c,i)=>{
+    const b = document.createElement("button");
+    b.className = "memCard";
+    b.dataset.i = i;
+    b.textContent = "❓";
+    b.onclick = () => memFlip(i, b);
+    g.appendChild(b);
+  });
+  show("memory-screen");
+
+  if(memTimer) clearInterval(memTimer);
+  Sound.playSfx("fanfare");
+  memTimer = setInterval(()=>{
+    memTimeLeft--;
+    $("memTimer").textContent = memTimeLeft;
+    if(memTimeLeft<=0) endMemory();
+  }, 1000);
+}
+
+function memFlip(i, btn){
+  if(memBusy || btn.classList.contains("open") || btn.classList.contains("done")) return;
+  if(memTimeLeft<=0) return;
+  btn.textContent = memCards[i].txt;
+  btn.classList.add("open");
+  Sound.playSfx("star");
+  memOpen.push({i, btn});
+
+  if(memOpen.length===2){
+    const [a,b] = memOpen;
+    if(memCards[a.i].pid === memCards[b.i].pid){
+      // 配对成功
+      a.btn.classList.add("done"); b.btn.classList.add("done");
+      memMatched++;
+      $("memMatched").textContent = `${memMatched} / ${memTotal}`;
+      memOpen = [];
+      Sound.playSfx("correct");
+      popEmoji("✅ 配对!");
+      if(memMatched===memTotal) setTimeout(endMemory, 600);
+    } else {
+      // 配错：短暂展示后翻回
+      memBusy = true;
+      Sound.playSfx("wrong");
+      setTimeout(()=>{
+        a.btn.textContent="❓"; b.btn.textContent="❓";
+        a.btn.classList.remove("open"); b.btn.classList.remove("open");
+        memOpen = []; memBusy = false;
+      }, 850);
+    }
+  }
+}
+
+function endMemory(){
+  if(memTimer){ clearInterval(memTimer); memTimer=null; }
+  const earned = Math.floor(memMatched/2);          // 每 2 对换 1 颗星（更难拿）
+  save.stars += earned;
+  save.points += memMatched*20;
+  save.bonusPlayed["memory"] = true;
+  persist(); refreshHud();
+  checkBadges({bonusStars:earned});
+
+  const allDone = memMatched===memTotal;
+  $("memTimer").textContent = "0";
+  $("memResult").style.display = "flex";
+  $("memResult").innerHTML =
+    `<h2 style="color:var(--gold);margin:0 0 8px;">🏁 配对结束</h2>`+
+    `<p style="margin:4px 0;">配对成功 <b>${memMatched} / ${memTotal}</b> 对</p>`+
+    `<p style="color:var(--gold);font-weight:800;font-size:20px;margin:8px 0;">${earned>0?`获得 ${earned} 颗额外星星 ⭐`:"再快一点就能拿星啦！"}</p>`+
+    `<p style="font-size:13px;color:#bbb;margin:6px 0;">${allDone?"全部翻对，太厉害了！":"每 2 对换 1 颗星"} · 积分 +${memMatched*20}</p>`;
+  if(allDone){ burst(); Sound.playSfx("fanfare"); }
+  setTimeout(()=>{ $("memResult").style.display="none"; openSubject(curSubj); }, 3200);
 }
 
 // Run Grade Screen by default
