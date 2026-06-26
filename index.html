@@ -96,6 +96,10 @@
   .learnCard .steps b{color:#b9770e;}
   .learnCard .steps ol{margin:6px 0 2px; padding-left:20px;}
   .learnCard .steps li{margin:4px 0; line-height:1.65;}
+  /* 图解（SVG 示意图） */
+  .fig{display:block; margin:12px auto 2px; width:100%; max-width:340px; background:#fbfdff; border:1px solid #e3edf5; border-radius:12px; padding:8px; box-sizing:border-box;}
+  .explain .fig{max-width:320px; background:#fff;}
+  .figcap{display:block; text-align:center; font-size:12px; color:#7f8c8d; margin:-2px 0 4px; font-weight:600;}
 
   /* 限时挑战倒计时 */
   #qTimerPill{background:linear-gradient(135deg,#e67e22,#d35400); color:#fff; border-radius:30px; padding:5px 12px; font-weight:800; font-size:14px;}
@@ -356,7 +360,7 @@ const SYLLABUS = {
               {q: "“六千零二十七”写成数字是？", opts: ["627", "6027", "6207", "60027"], a: 1,
                why: ["六千是 6 000，零二十七是 27。","合起来整个数写成数字是 <b>6 027</b>。"], tip: "中间数位没有数时写“0”占位。"},
               {q: "哪一个数最接近 8 900？", opts: ["8 895", "8 910", "8 850", "8 990"], a: 0,
-               why: ["计算它们与 8 900 的差：","8 900 − 8 895 = 5；","8 910 − 8 900 = 10。","所以 8 895 与 8 900 的相差最少，最接近 8 900。"], tip: "算差值，差最小的那个数就是最接近的。"},
+               why: ["计算它们与 8 900 的差：","8 900 − 8 895 = 5；","8 910 − 8 900 = 10。","所以 8 895 与 8 900 的相差最少，最接近 8 900。"], tip: "算差值，差最小的那个数就是最接近的。", fig:"nline|8900|8895|8910"},
               {q: "3 456 + 1 234 的和是多少？", opts: ["4 690", "4 680", "4 590", "4 790"], a: 0,
                why: ["个位 6+4=10，写 0 进 1；十位 5+3+1=9；百位 4+2=6；千位 3+1=4。","结果是 <b>4 690</b>。"], tip: "加法进位别忘加。"},
               {q: "一个三位数，百位是 6，十位比百位少 2，个位是十位的一半，这个数是？", opts: ["642", "624", "842", "640"], a: 0,
@@ -370,7 +374,7 @@ const SYLLABUS = {
               {q: "以下哪个分数是真分数？", opts: ["5/3", "2/5", "7/7", "8/5"], a: 1,
                why: ["真分数的分子比分母小。","在选项中，只有 <b>2/5</b> 的分子 2 比分母 5 小，所以它是真分数。"], tip: "分子小、分母大，就是真分数。"},
               {q: "把 3/10 写成小数是？", opts: ["0.3", "0.03", "3.0", "0.33"], a: 0,
-               why: ["十分之几写成小数就是零点几。","所以 3/10 写作 <b>0.3</b>。"], tip: "分母是 10，小数点后就有一位数字。"},
+               why: ["十分之几写成小数就是零点几。","所以 3/10 写作 <b>0.3</b>。"], tip: "分母是 10，小数点后就有一位数字。", fig:"frac|3|10"},
               {q: "0.45 与 0.6 哪个数更大？", opts: ["0.45", "0.6", "一样大", "无法比较"], a: 1,
                why: ["比较小数先比十分位。","0.6 的十分位是 6，而 0.45 的十分位是 4。","因为 6 > 4，所以 <b>0.6</b> 比 0.45 大。"], tip: "小数比大小：十分位开始比，不要只看数字长短。"},
               {q: "在 3/5、0.7、1/2 这三个数中，哪一个最大？", opts: ["3/5", "0.7", "1/2", "一样大"], a: 1,
@@ -511,7 +515,7 @@ const SYLLABUS = {
             {q:"“七万零六十” 写成数字是？", opts:["7060","70 060","70 600","700 060"], a:1,
              why:["七万 = 70 000；零六十 = 60，中间的千位、百位都是 0。","合起来就是 <b>70 060</b>。"], tip:"听到“零”表示中间有数位是 0，别漏写！"},
             {q:"48 250 的近似数（凑整到最接近的千）是多少？", opts:["48 000","48 200","48 300","49 000"], a:0,
-             why:["看百位上的数字 2，比 5 小，所以向下舍去（4舍）。","结果是 <b>48 000</b>。"], tip:"凑整看后一位：≥5 进一，<5 舍去。"},
+             why:["48 250 夹在 48 000 与 49 000 之间。","看百位上的数字 2，比 5 小，所以向下舍去（4舍）。","48 250 离 48 000 只差 250，离 49 000 差 750，所以更接近 <b>48 000</b>。"], tip:"凑整看后一位：≥5 进一，<5 舍去。", fig:"nline|48250|48000|49000"},
             {q:"下列哪个数最大？", opts:["29 999","30 100","30 010","29 909"], a:1,
              why:["先比万位，30 100 和 30 010 比 29 999 大。","再比百位：30 100 的百位是 1，比 30 010 的 0 大。"], tip:"比大小：从最高位（左边）开始比。"},
             {q:"把 36 472 凑整到最接近的万，得多少？", opts:["30 000","36 000","40 000","37 000"], a:2,
@@ -563,9 +567,11 @@ const SYLLABUS = {
           ]},
           fraction:{ name:"分数", icon:"🍕", qs:[
             {q: "一个比萨切成 8 块，吃掉 3 块，吃掉了几分之几？", opts:["3/5","5/8","3/8","8/3"], a:2,
-             why:["分母是总份数 8，分子是吃掉 of 份数 3。","所以吃掉了 <b>3/8</b>。"], tip:"分数 = 取的份数 ÷ 总份数。"},
+             why:["分母是总份数 8，分子是吃掉的份数 3。","所以吃掉了 <b>3/8</b>。"], tip:"分数 = 取的份数 ÷ 总份数。", fig:"frac|3|8"},
             {q:"下列哪个分数最大？", opts:["1/2","1/3","1/4","1/6"], a:0,
-             why:["分子都是 1 时，分母越小，每一份越大。","分母 2 最小，所以 <b>1/2</b> 最大。"], tip:"同分子比大小：分母小的反而大。"},
+             why:["分子都是 1 时，分母越小，每一份越大。","分母 2 最小，所以 <b>1/2</b> 最大。"], tip:"同分子比大小：分母小的反而大。", fig:"frac|1|2"},
+            {q:"哥哥吃了一块饼的 3/4，姐姐吃了同样大饼的 5/8，谁吃得多？", opts:["哥哥 (3/4)","姐姐 (5/8)","一样多","无法比较"], a:0,
+             why:["把 3/4 化成八分之几：3/4 = 6/8。","比较 6/8 和 5/8，分母相同看分子：6 > 5。","所以 <b>哥哥</b>吃得多。"], tip:"分母不同，先通分成相同分母再比分子。", fig:"frac|6|8"},
             {q:"2/5 + 1/5 = ?", opts:["3/10","3/5","2/10","1/5"], a:1,
              why:["分母相同的分数相加，分母不变，只把分子相加。","2 + 1 = 3，所以等于 <b>3/5</b>。"], tip:"同分母相加减：分母不变，分子加减。"},
             {q:"一块蛋糕平均分成 8 份，哥哥吃了 3/8，妹妹吃了 2/8，两人一共吃了多少？", opts:["5/8","5/16","1/8","6/8"], a:0,
@@ -589,7 +595,9 @@ const SYLLABUS = {
             {q:"电影 7:45 开始，放映 1 小时 30 分钟，几点结束？", opts:["8:15","9:00","9:15","8:45"], a:2,
              why:["7:45 加 1 小时 = 8:45，再加 30 分钟。","8:45 + 30 分 = <b>9:15</b>。"], tip:"分钟相加满 60 要进位成 1 小时。"},
             {q:"火车 10:45 出发，行驶 1 小时 40 分钟后到站，到站时间是？", opts:["12:25","12:05","11:25","12:45"], a:0,
-             why:["先加分钟：45 + 40 = 85 分钟 = 1 小时 25 分钟。","小时：10 + 1（行驶）+ 1（进位）= 12，分钟 25。","所以到站时间是 <b>12:25</b>。"], tip:"分钟相加超过 60，就拿出 60 进成 1 小时。"}
+             why:["先加分钟：45 + 40 = 85 分钟 = 1 小时 25 分钟。","小时：10 + 1（行驶）+ 1（进位）= 12，分钟 25。","所以到站时间是 <b>12:25</b>。"], tip:"分钟相加超过 60，就拿出 60 进成 1 小时。", fig:"clock|12|25"},
+            {q:"小明 8:20 开始做功课，做了 55 分钟才完成，他几点做完？", opts:["9:15","8:75","9:05","9:25"], a:0,
+             why:["分钟相加：20 + 55 = 75 分钟 = 1 小时 15 分钟。","小时：8 + 1（进位）= 9，分钟 15。","所以做完是 <b>9:15</b>。时间没有“8:75”这种写法！"], tip:"分钟最多到 59，满 60 一定要进成 1 小时。", fig:"clock|9|15"}
           ]},
           measure:{ name:"度量衡", icon:"📏", qs:[
             {q:"3 米（m）等于多少厘米（cm）？", opts:["30 cm","300 cm","3 000 cm","30 000 cm"], a:1,
@@ -767,16 +775,17 @@ const SYLLABUS = {
 const LEARN = {
   // ----- 三年级 -----
   "std3.math.numbers": [
-    {h:"数位与数值", p:"从右往左，数位依次是<b>个位、十位、百位、千位</b>。同一个数字在不同数位代表的数值不同：7 408 里的 4 在百位，表示 <b>400</b>。"},
-    {h:"读数与写数", p:"读到“零”表示中间某个数位上没有数，写数时要用 <b>0</b> 占位，例如“六千零二十七”写成 <b>6 027</b>，不能漏写中间的 0。"},
+    {h:"数位与数值", p:"从右往左，数位依次是<b>个位、十位、百位、千位</b>。同一个数字在不同数位代表的数值不同：7 408 里的 4 在百位，表示 <b>400</b>。", fig:"pv|7408"},
+    {h:"读数与写数", p:"读到“零”表示中间某个数位上没有数，写数时要用 <b>0</b> 占位，例如“六千零二十七”写成 <b>6 027</b>，不能漏写中间的 0。", fig:"pv|6027"},
     {h:"比较与估算", p:"比大小先看最高位；求“最接近”就算<b>差值</b>，差最小的最接近。",
+     fig:"nline|8900|8895|8910",
      steps:["把每个数和目标数<b>相减</b>，求出差（大减小）。","差越<b>小</b>，就越接近目标数。","比一比哪个差最小，那个数就是答案。"],
      eg:"哪个数最接近 8 900？算差值：8 900−8 895=5；8 910−8 900=10。差 5 < 差 10，所以 <b>8 895</b> 最接近。"}
   ],
   "std3.math.fraction": [
-    {h:"真分数", p:"分子比分母小的分数叫<b>真分数</b>（如 2/5）；分子等于或大于分母（如 7/7、8/5）就不是真分数。"},
-    {h:"分数与小数互换", p:"分母是 10，写成小数后小数点后有一位：3/10 = <b>0.3</b>。"},
-    {h:"小数比大小", p:"先比<b>十分位</b>，再比百分位。0.6 比 0.45 大，因为十分位 6 > 4，不能只看数字长短。"}
+    {h:"真分数", p:"分子比分母小的分数叫<b>真分数</b>（如 2/5）；分子等于或大于分母（如 7/7、8/5）就不是真分数。", fig:"frac|2|5"},
+    {h:"分数与小数互换", p:"分母是 10，写成小数后小数点后有一位：3/10 = <b>0.3</b>。", fig:"frac|3|10"},
+    {h:"小数比大小", p:"先比<b>十分位</b>，再比百分位。0.6 比 0.45 大，因为十分位 6 > 4，不能只看数字长短。", fig:"cmp|0.45|0.6"}
   ],
   "std3.math.measure": [
     {h:"长度单位", p:"<b>1 米 = 100 厘米</b>。大单位换小单位要<b>乘</b>换算率：2 米 = 200 厘米。"},
@@ -802,7 +811,7 @@ const LEARN = {
     {h:"动物的食性", p:"只吃肉的是<b>肉食性</b>（狮子、老虎）；只吃植物的是<b>草食性</b>（牛、兔）；又吃肉又吃植物的是<b>杂食性</b>（鸡、熊、人）。"}
   ],
   "std3.science.magnet": [
-    {h:"磁极规律", p:"磁铁有 N、S 两极：<b>同极相斥，异极相吸</b>。"},
+    {h:"磁极规律", p:"磁铁有 N、S 两极：<b>同极相斥，异极相吸</b>。", fig:"magnet"},
     {h:"磁铁吸什么", p:"磁铁只吸<b>铁、镍、钴</b>等金属，不吸塑料、木头、玻璃。"}
   ],
   "std3.bm.katanama": [
@@ -821,7 +830,7 @@ const LEARN = {
   ],
   // ----- 四年级 -----
   "std4.math.place": [
-    {h:"五位数的数位", p:"从右往左：个、十、百、千、<b>万</b>。35 814 里的 5 在<b>千位</b>，表示 5000。"},
+    {h:"五位数的数位", p:"从右往左：个、十、百、千、<b>万</b>。35 814 里的 5 在<b>千位</b>，表示 5000。", fig:"pv|35814"},
     {h:"含 0 的写数", p:"“七万零六十”中间千位、百位都没有数，要用 0 占位，写成 <b>70 060</b>。"},
     {h:"凑整（约数）", p:"凑整到千：看百位，<b>≥5 进一，<5 舍去</b>。48 250 → 48 000。",
      steps:["先看清要凑整到哪一位（千 / 万）。","看它<b>右边一位</b>的数字。","那位 ≥5 就向上进一，<5 就舍去（变成 0）。","进位/舍去后面的数位<b>全部写 0</b>。"],
@@ -845,7 +854,7 @@ const LEARN = {
      eg:"45 ÷ 7：7×6=42 最接近且不超过 45，商是 6；45−42=3，余 3（3 < 7 正确），所以是 <b>6 余 3</b>。"}
   ],
   "std4.math.fraction": [
-    {h:"分数的意义", p:"分数 = <b>取的份数 ÷ 总份数</b>。比萨切 8 块吃 3 块 = 3/8。"},
+    {h:"分数的意义", p:"分数 = <b>取的份数 ÷ 总份数</b>。比萨切 8 块吃 3 块 = 3/8。", fig:"frac|3|8"},
     {h:"同分子比大小", p:"分子相同时，<b>分母越小，每份越大</b>：1/2 > 1/3 > 1/4。"},
     {h:"同分母加减", p:"<b>分母不变，分子相加减</b>：2/5 + 1/5 = 3/5。",
      eg:"一块蛋糕分成 9 份，吃掉 6 份还剩多少？整块是 9/9，9/9 − 6/9 = <b>3/9</b>。分母 9 不变，只把分子相减。"}
@@ -859,8 +868,9 @@ const LEARN = {
   "std4.math.time": [
     {h:"时间换算", p:"<b>1 小时 = 60 分钟</b>。2 小时 30 分 = 150 分钟。"},
     {h:"求结束时间", p:"分钟相加<b>满 60 进成 1 小时</b>。7:45 + 1 时 30 分 = 9:15。",
+     fig:"clock|12|25",
      steps:["先把<b>分钟</b>相加。","分钟满 60 就拿出 60，进成 1 小时（剩下的写在分钟）。","再把<b>小时</b>相加（别忘了刚进位的那 1 小时）。"],
-     eg:"10:45 + 1 时 40 分：分钟 45+40=85=1 时 25 分；小时 10+1+1=12，所以 <b>12:25</b>。"}
+     eg:"10:45 + 1 时 40 分：分钟 45+40=85=1 时 25 分；小时 10+1+1=12，所以 <b>12:25</b>（如上图）。"}
   ],
   "std4.math.measure": [
     {h:"长度", p:"<b>1 米 = 100 厘米</b>；1 千米 = 1000 米。"},
@@ -896,7 +906,7 @@ const LEARN = {
     {h:"呼吸器官", p:"鱼住在水里用<b>鳃</b>呼吸；猫、鸟、蛇等陆地动物多用<b>肺</b>。"}
   ],
   "std4.science.matter": [
-    {h:"物质三态", p:"物质有<b>固态、液态、气态</b>三种状态。水遇冷结成冰（液→固）。"},
+    {h:"物质三态", p:"物质有<b>固态、液态、气态</b>三种状态。水遇冷结成冰（液→固）。", fig:"states"},
     {h:"蒸发", p:"水受热变成看不见的<b>水蒸气</b>飞到空气中（液→气），湿衣服就晾干了。"},
     {h:"凝结（和蒸发相反）", p:"水蒸气<b>遇冷</b>又变回小水珠（气→液），叫凝结。冰水杯外面的水珠、清晨的露水都是凝结。",
      steps:["看变化的<b>方向</b>：是变干（液→气）还是出现水珠（气→液）？","受热、变干、消失 → <b>蒸发</b>。","遇冷、出现水珠 → <b>凝结</b>。"]}
@@ -925,6 +935,91 @@ const LEARN = {
     {h:"石器时代", p:"人们用<b>石头</b>打制、磨制工具。之后才进入青铜时代、铁器时代。"}
   ]
 };
+
+/* ============================================================
+   图解 (SVG 示意图) — 把抽象概念画出来，帮助学生直观理解
+   规格字符串 "type|arg1|arg2"，零外部资源，纯内联 SVG。
+   ============================================================ */
+function svgWrap(h,inner,cap){
+  return `<svg class="fig" viewBox="0 0 320 ${h}" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="示意图">${inner}</svg>`
+    + (cap?`<span class="figcap">${cap}</span>`:"");
+}
+// 数位表：把每个数字放进 个/十/百/千/万 格子里
+function figPV(numStr){
+  const s=String(numStr).replace(/[^0-9]/g,""), labels=["个","十","百","千","万","十万"];
+  const digs=s.split(""), n=digs.length, cw=Math.min(48,300/n), x0=(320-n*cw)/2, y=14, h=44;
+  let g="";
+  digs.forEach((d,i)=>{ const x=x0+i*cw+2, w=cw-4, lab=labels[n-1-i];
+    g+=`<rect x="${x}" y="${y}" width="${w}" height="${h}" rx="7" fill="#eef6fb" stroke="#3498db" stroke-width="2"/>`
+     + `<text x="${x+w/2}" y="${y+h/2+9}" font-size="26" font-weight="800" text-anchor="middle" fill="#2c3e50">${d}</text>`
+     + `<text x="${x+w/2}" y="${y+h+18}" font-size="13" font-weight="700" text-anchor="middle" fill="#e67e22">${lab}</text>`; });
+  return svgWrap(82,g,`${digs.join(" ")} —— 每个数字所在的数位`);
+}
+// 分数条：把整体平均切成 den 份，涂亮 num 份
+function figFrac(num,den){ num=+num; den=+den;
+  const W=240,x0=40,y=16,h=44,pw=W/den; let g="";
+  for(let i=0;i<den;i++) g+=`<rect x="${x0+i*pw}" y="${y}" width="${pw}" height="${h}" fill="${i<num?'#f1c40f':'#ffffff'}" stroke="#b9770e" stroke-width="2"/>`;
+  return svgWrap(76,g,`${num}/${den} —— 平均分成 ${den} 份，取其中 ${num} 份`);
+}
+// 比较条：两个小数 (0~1) 用长度直观比大小
+function figCmp(a,b){ a=+a; b=+b; const W=220,x0=64;
+  const row=(v,y,c)=>`<text x="${x0-8}" y="${y+18}" font-size="15" font-weight="800" text-anchor="end" fill="#2c3e50">${v}</text>`
+    + `<rect x="${x0}" y="${y}" width="${W}" height="24" rx="5" fill="#f0f4f8" stroke="#cbd5e0"/>`
+    + `<rect x="${x0}" y="${y}" width="${W*Math.min(Math.max(v,0),1)}" height="24" rx="5" fill="${c}"/>`;
+  const g=row(a,16,"#3498db")+row(b,52,"#2ecc71");
+  return svgWrap(92,g,`${a>b?a:b} 更大（条形更长的数更大）`);
+}
+// 数轴：标出目标数与两个候选数，比谁离得近
+function figNline(target,a,b){ target=+target; a=+a; b=+b;
+  const lo=Math.min(a,b,target), hi=Math.max(a,b,target), span=(hi-lo)||1, X=24,W=272,y=58;
+  const px=v=>X+(v-lo)/span*W;
+  const tick=(v,c,lab)=>`<line x1="${px(v)}" y1="${y-7}" x2="${px(v)}" y2="${y+7}" stroke="${c}" stroke-width="3"/>`
+    + `<text x="${px(v)}" y="${y-12}" font-size="13" font-weight="800" text-anchor="middle" fill="${c}">${v}</text>`
+    + `<text x="${px(v)}" y="${y+24}" font-size="11" text-anchor="middle" fill="${c}">${lab}</text>`;
+  let g=`<line x1="${X}" y1="${y}" x2="${X+W}" y2="${y}" stroke="#7f8c8d" stroke-width="2"/>`;
+  g+=tick(target,"#e67e22","目标")+tick(a,"#3498db","差 "+Math.abs(target-a))+tick(b,"#16a085","差 "+Math.abs(target-b));
+  return svgWrap(82,g,"差越小，离目标数越近");
+}
+// 时钟：画出时针与分针
+function figClock(h,m){ h=+h; m=+m; const cx=160,cy=60,r=48; let g=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="#fff" stroke="#2c3e50" stroke-width="3"/>`;
+  for(let i=1;i<=12;i++){ const a=i/12*2*Math.PI-Math.PI/2;
+    g+=`<text x="${cx+Math.cos(a)*(r-11)}" y="${cy+Math.sin(a)*(r-11)+5}" font-size="12" font-weight="700" text-anchor="middle" fill="#2c3e50">${i}</text>`; }
+  const ha=((h%12)+m/60)/12*2*Math.PI-Math.PI/2, ma=m/60*2*Math.PI-Math.PI/2;
+  g+=`<line x1="${cx}" y1="${cy}" x2="${cx+Math.cos(ha)*(r-22)}" y2="${cy+Math.sin(ha)*(r-22)}" stroke="#2c3e50" stroke-width="4" stroke-linecap="round"/>`;
+  g+=`<line x1="${cx}" y1="${cy}" x2="${cx+Math.cos(ma)*(r-10)}" y2="${cy+Math.sin(ma)*(r-10)}" stroke="#e74c3c" stroke-width="3" stroke-linecap="round"/>`;
+  g+=`<circle cx="${cx}" cy="${cy}" r="3" fill="#2c3e50"/>`;
+  return svgWrap(130,g,`${h}:${String(m).padStart(2,"0")}（黑针=时，红针=分）`);
+}
+// 磁铁：异极相吸、同极相斥
+function figMagnet(){
+  const seg=(x,y,t)=>`<rect x="${x}" y="${y}" width="26" height="26" fill="${t==='N'?'#e74c3c':'#3498db'}"/><text x="${x+13}" y="${y+19}" font-size="16" font-weight="800" text-anchor="middle" fill="#fff">${t}</text>`;
+  const mag=(x,y,a,b)=>seg(x,y,a)+seg(x+26,y,b);
+  let g="";
+  g+=`<text x="12" y="34" font-size="13" font-weight="800" fill="#27ae60">异极相吸</text>`+mag(120,18,"N","S")+mag(184,18,"N","S")+`<text x="178" y="36" font-size="18" text-anchor="middle" fill="#27ae60">→←</text>`;
+  g+=`<text x="12" y="80" font-size="13" font-weight="800" fill="#e74c3c">同极相斥</text>`+mag(120,64,"N","S")+mag(184,64,"S","N")+`<text x="178" y="82" font-size="18" text-anchor="middle" fill="#e74c3c">←&#8202;→</text>`;
+  return svgWrap(100,g,"N 红 / S 蓝：靠近的两极不同就吸，相同就推");
+}
+// 物质三态：固态紧密、液态较松、气态四散
+function figStates(){
+  const box=(x,t,arr)=>{ let dots=""; arr.forEach(p=>dots+=`<circle cx="${x+p[0]}" cy="${20+p[1]}" r="6" fill="#3498db"/>`);
+    return `<rect x="${x}" y="14" width="80" height="62" rx="8" fill="#eef6fb" stroke="#3498db" stroke-width="2"/>`+dots
+      + `<text x="${x+40}" y="94" font-size="14" font-weight="800" text-anchor="middle" fill="#2c3e50">${t}</text>`; };
+  const grid=[[14,4],[34,4],[54,4],[14,24],[34,24],[54,24],[14,44],[34,44],[54,44]];
+  const loose=[[16,8],[42,6],[60,22],[20,40],[46,42],[62,30]];
+  const gas=[[20,6],[58,14],[34,38],[62,46],[12,48]];
+  return svgWrap(104,box(14,"固态",grid)+box(120,"液态",loose)+box(226,"气态",gas),"颗粒越自由，状态越“松散”");
+}
+function FIG(spec){
+  const p=String(spec).split("|"), t=p[0];
+  if(t==="pv") return figPV(p[1]);
+  if(t==="frac") return figFrac(p[1],p[2]);
+  if(t==="cmp") return figCmp(p[1],p[2]);
+  if(t==="nline") return figNline(p[1],p[2],p[3]);
+  if(t==="clock") return figClock(p[1],p[2]);
+  if(t==="magnet") return figMagnet();
+  if(t==="states") return figStates();
+  return "";
+}
 
 /* ============================================================
    游戏状态 + 存档 (localStorage)
@@ -1408,6 +1503,7 @@ function openLearn(sk,tk){
     const d=document.createElement("div");
     d.className="learnCard";
     d.innerHTML=`<h3><span class="num">${i+1}</span>${c.h}</h3><p>${c.p}</p>`
+      + (c.fig?FIG(c.fig):"")
       + (c.steps?`<div class="steps"><b>解题步骤：</b><ol>`+c.steps.map(s=>`<li>${s}</li>`).join("")+`</ol></div>`:"")
       + (c.eg?`<div class="eg"><b>例题：</b>${c.eg}</div>`:"");
     wrap.appendChild(d);
@@ -1554,6 +1650,7 @@ function choose(i,btn){
     ex.className="explain ok show";
     ex.innerHTML=`<h3>✅ 答对了！太棒了</h3><p class="lead">为什么是「${item.opts[item.a]}」：</p>`
       + item.why.map(p=>`<p>${p}</p>`).join("")
+      + (item.fig?FIG(item.fig):"")
       + (item.tip?`<div class="tip">💡 记忆诀窍：${item.tip}</div>`:"");
   } else {
     streak=0;
@@ -1573,6 +1670,7 @@ function choose(i,btn){
     ex.className="explain no show";
     ex.innerHTML=`<h3>${timedOut?"⏰ 时间到了！":"❌ 答错了，再接再厉！"}正确答案是「${item.opts[item.a]}」</h3><p class="lead">讲解：</p>`
       + item.why.map(p=>`<p>${p}</p>`).join("")
+      + (item.fig?FIG(item.fig):"")
       + (item.tip?`<div class="tip">💡 记忆诀窍：${item.tip}</div>`:"");
   }
 
