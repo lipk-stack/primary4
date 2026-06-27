@@ -9,7 +9,8 @@
 <!-- Google Fonts -->
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet">
+<!-- 字体非阻塞加载：离线/无网时也能立即运行，不会卡在等待网络（标准字体兜底） -->
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'">
 <style>
   /* ===== 星星学院 — 马来西亚华小三/四年级学习游戏 ===== */
   :root{
@@ -132,6 +133,30 @@
   .memResult{position:absolute; inset:0; background:rgba(10,10,30,0.92); border-radius:24px; display:none; flex-direction:column; justify-content:center; align-items:center; text-align:center; color:#fff; padding:20px;}
   @media(min-width:560px){ .memGrid{grid-template-columns:repeat(6,1fr);} }
 
+  /* 答题打地鼠（第 7 款奖励游戏） */
+  .moleGrid{display:grid; grid-template-columns:repeat(3,1fr); gap:clamp(8px,2vw,16px); max-width:420px; margin:6px auto;}
+  .moleHole{aspect-ratio:1/1; border-radius:50%; background:radial-gradient(circle at 50% 35%, #8d6e4f, #5d4632 70%); box-shadow:inset 0 8px 14px rgba(0,0,0,.45); position:relative; overflow:hidden; cursor:pointer; border:none;}
+  .moleHole .mole{position:absolute; left:0; right:0; bottom:-100%; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px; transition:bottom .18s cubic-bezier(0.175,0.885,0.32,1.275);}
+  .moleHole.up .mole{bottom:0;}
+  .moleHole .face{font-size:clamp(30px,8vw,46px); line-height:1;}
+  .moleHole .num{background:#fff; color:#2c3e50; font-weight:800; font-size:clamp(15px,3.6vw,22px); border-radius:12px; padding:1px 10px; box-shadow:0 2px 4px rgba(0,0,0,.25);}
+  .moleHole.hit .mole{filter:saturate(.4) brightness(1.2);}
+  .moleHole.bad .num{background:#fdecea; color:#c0392b;}
+
+  /* 学习报告 */
+  .rptSum{display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px; margin-bottom:14px;}
+  .rptStat{background:var(--card); border-radius:16px; box-shadow:var(--shadow); padding:12px; text-align:center;}
+  .rptStat .v{font-size:26px; font-weight:800; color:var(--accent);}
+  .rptStat .l{font-size:12px; color:#7f8c8d; font-weight:700; margin-top:2px;}
+  .rptCard{background:var(--card); border-radius:18px; box-shadow:var(--shadow); padding:14px 16px; margin-bottom:12px;}
+  .rptCard h3{margin:0 0 8px; font-size:17px; color:#2c3e50; display:flex; align-items:center; gap:8px;}
+  .rptRow{display:flex; align-items:center; justify-content:space-between; gap:8px; padding:7px 0; border-top:1px solid #eef2f6; font-size:15px;}
+  .rptRow .nm{color:#34495e; font-weight:700;}
+  .rptRow .st{font-weight:800; letter-spacing:1px; white-space:nowrap;}
+  .rptRow .st.todo{color:#b0bec5; font-weight:700; font-size:13px;}
+  .rptBar{height:8px; background:#eef2f6; border-radius:6px; overflow:hidden; flex:0 0 70px;}
+  .rptBar>i{display:block; height:100%; background:linear-gradient(90deg,var(--gold),#f39c12);}
+
   /* 结算页 */
   .result{text-align:center; padding:30px 20px;}
   .result .big{font-size:72px; margin:6px 0; filter:drop-shadow(0 4px 8px rgba(0,0,0,0.15));}
@@ -196,6 +221,7 @@
       <span class="pill">🏅 <b id="hPoints">0</b></span>
       <span class="pill" id="reviewBtn" style="cursor:pointer; background:linear-gradient(135deg, #e74c3c, #c0392b);">📕 错题本 <b id="wrongCount">0</b></span>
       <span class="pill" id="badgeBtn" style="cursor:pointer; background:linear-gradient(135deg, #9b59b6, #8e44ad);">🏆 成就 <b id="badgeMini">0</b></span>
+      <span class="pill" id="reportBtn" style="cursor:pointer; background:linear-gradient(135deg, #16a085, #138d75);">📊 报告</span>
       <span class="grow"></span>
       <span class="pill" id="soundToggle" style="cursor:pointer">🔊 音效: 开</span>
       <span class="pill" id="musicToggle" style="cursor:pointer">🎵 音乐: 开</span>
@@ -266,7 +292,7 @@
       <!-- 奖励关卡激活卡片 -->
       <div id="bonusUnlockCard" style="display:none; margin: 18px 0; padding:16px; border:2px dashed var(--gold); border-radius:18px; background:linear-gradient(180deg, #fffcf0, #fff7d6); animation: pulse 2s infinite;">
         <h3 style="color:#e67e22; margin:0 0 6px 0; font-size:18px;">🎁 解锁奖励关卡！</h3>
-        <p style="font-size:14px; margin:0 0 12px 0; color:#666;">你达成了成就，随机开启一款 <b>奖励小游戏</b>（太空漫游 / 数字陨石 / 飞机大战 / 坦克大战 / 知识配对 / 记忆节奏）—— 每次都不一样，闯得越好星星越多！</p>
+        <p style="font-size:14px; margin:0 0 12px 0; color:#666;">你达成了成就，随机开启一款 <b>奖励小游戏</b>（太空漫游 / 数字陨石 / 飞机大战 / 坦克大战 / 知识配对 / 记忆节奏 / 答题打地鼠）—— 每次都不一样，闯得越好星星越多！</p>
         <button class="btn primary" id="rGameBtn" style="background: linear-gradient(135deg, #f39c12, #e67e22);">🎮 开始挑战 🎮</button>
       </div>
 
@@ -328,6 +354,21 @@
     <div class="footnote" style="color:#a9c2f0; text-shadow:none;">每多记住一个节奏就更靠近星星 · 记得越长，星星越多（最多 8 颗）· 每局都不一样</div>
   </section>
 
+  <!-- ===== 🐹 答题打地鼠（第 7 款奖励游戏） ===== -->
+  <section id="mole-screen" class="screen">
+    <div class="qtop" style="margin-bottom: 8px;">
+      <span class="pill">⏱️ <b id="moleTimer">30</b>秒</span>
+      <span class="pill" style="background: var(--accent);">🐹 算式: <b id="moleEq">?</b></span>
+      <span class="pill" style="background: var(--gold); color:#000;">🏅 <b id="moleScore">0</b></span>
+    </div>
+    <div class="card" style="position:relative; padding:14px;">
+      <p style="text-align:center;margin:0 0 12px;font-size:14px;color:#7f8c8d;font-weight:700;">先心算出上面算式的答案，再敲<b>举着正确答案</b>的地鼠！敲错数字或敲到 💣 会扣分。</p>
+      <div id="moleGrid" class="moleGrid"></div>
+      <div id="moleResult" class="memResult"></div>
+    </div>
+    <div class="footnote" style="color:#a9c2f0; text-shadow:none;">每局算式随机、地鼠位置随机 · 每 3 分换 1 颗星星（最多 8 颗）· 每次都不一样</div>
+  </section>
+
   <!-- ===== 🏆 成就徽章 ===== -->
   <section id="badges" class="screen">
     <div class="hud">
@@ -338,6 +379,19 @@
     <h1 style="font-size:28px">🏆 成就徽章 🏆</h1>
     <p class="sub">努力学习、闯关、玩奖励游戏，集齐所有徽章吧！</p>
     <div class="grid" id="badgeGrid"></div>
+  </section>
+
+  <!-- ===== 📊 学习报告（家长/老师） ===== -->
+  <section id="report" class="screen">
+    <div class="hud">
+      <span class="pill" id="reportBack" style="cursor:pointer">⬅ 返回主页</span>
+      <span class="grow"></span>
+      <span class="pill" id="reportCopy" style="cursor:pointer; background:linear-gradient(135deg,#16a085,#138d75);">📋 复制报告</span>
+    </div>
+    <h1 style="font-size:26px">📊 学习报告 📊</h1>
+    <p class="sub">给家长和老师看：孩子各单元掌握情况一目了然</p>
+    <div id="reportBody"></div>
+    <div class="footnote" style="color:#a9c2f0; text-shadow:none;">⭐ = 该单元首次通关获得的星级（满分 3★，已锁定不再重刷）· 可点「复制报告」分享给老师或家长</div>
   </section>
 
 </div>
@@ -388,7 +442,9 @@ const SYLLABUS = {
               {q: "1 升（L）等于多少毫升（mL）？", opts: ["10 mL", "100 mL", "1000 mL", "10000 mL"], a: 2,
                why: ["升和毫升的换算率是 1000。","所以 1 升 = <b>1000 毫升</b>。"], tip: "1 L = 1000 mL。"},
               {q: "小明身高 1 米 35 厘米，妹妹身高 98 厘米，两人身高相差多少厘米？", opts: ["37 厘米", "43 厘米", "27 厘米", "47 厘米"], a: 0,
-               why: ["先把小明的身高换成厘米：1 米 35 厘米 = 100 + 35 = 135 厘米。","再相减：135 − 98 = <b>37 厘米</b>。"], tip: "“相差多少”用减法；单位要先统一。"}
+               why: ["先把小明的身高换成厘米：1 米 35 厘米 = 100 + 35 = 135 厘米。","再相减：135 − 98 = <b>37 厘米</b>。"], tip: "“相差多少”用减法；单位要先统一。"},
+              {q: "用尺量一支铅笔，左端对着刻度 2，右端对着刻度 9。铅笔长多少厘米？", opts: ["9 厘米", "11 厘米", "7 厘米", "2 厘米"], a: 2,
+               why: ["量长度要看<b>两端的刻度差</b>，不是只看右端的数字。","长度 = 右端 − 左端 = 9 − 2 = <b>7 厘米</b>。"], tip: "读尺：右端刻度 − 左端刻度才是长度。", fig: "ruler|2|9"}
             ]
           }
         }
@@ -607,7 +663,11 @@ const SYLLABUS = {
             {q:"一条丝带长 3 米 25 厘米，用去 150 厘米，还剩多少厘米？", opts:["175 厘米","185 厘米","275 厘米","165 厘米"], a:0,
              why:["先把长度都换成厘米：3 米 25 厘米 = 300 + 25 = 325 厘米。","再相减：325 − 150 = <b>175 厘米</b>。"], tip:"单位不同时，先统一成同一个单位再计算。"},
             {q:"一桶水重 2 千克 300 克，倒出 800 克后，桶里的水还剩多少克？", opts:["1 500 克","2 100 克","1 600 克","2 500 克"], a:0,
-             why:["先统一单位：2 千克 300 克 = 2000 + 300 = 2300 克。","再相减：2300 − 800 = <b>1500 克</b>。"], tip:"先把千克换成克（×1000）再加减，最后看清楚要的是哪个单位。"}
+             why:["先统一单位：2 千克 300 克 = 2000 + 300 = 2300 克。","再相减：2300 − 800 = <b>1500 克</b>。"], tip:"先把千克换成克（×1000）再加减，最后看清楚要的是哪个单位。"},
+            {q:"妈妈买了 3 包糖，每包 250 克。一共多少千克？", opts:["750 克（不到 1 千克）","0.75 千克","7.5 千克","75 克"], a:1,
+             why:["先算总克数：3 × 250 = 750 克。","1000 克 = 1 千克，750 克 = <b>0.75 千克</b>（不足 1 千克）。"], tip:"克换千克要÷1000；750÷1000 = 0.75。"},
+            {q:"一块木板用尺量得：左端在刻度 0，右端在刻度 8（厘米）。它的长度是？", opts:["8 厘米","0 厘米","16 厘米","9 厘米"], a:0,
+             why:["左端在 0，右端在 8，长度 = 8 − 0 = <b>8 厘米</b>。","左端正好对着 0 时，右端的刻度就是长度。"], tip:"读尺要看两端刻度差；左端是 0 时特别简单。", fig:"ruler|0|8"}
           ]}
         }
       },
@@ -789,6 +849,8 @@ const LEARN = {
   ],
   "std3.math.measure": [
     {h:"长度单位", p:"<b>1 米 = 100 厘米</b>。大单位换小单位要<b>乘</b>换算率：2 米 = 200 厘米。"},
+    {h:"用尺量长度", p:"量长度时，物体两端各对着一个刻度。长度 = <b>右端刻度 − 左端刻度</b>，不是只看右端的数字哦。", fig:"ruler|2|9",
+     steps:["先看物体<b>左端</b>对着哪个刻度。","再看<b>右端</b>对着哪个刻度。","用右端的数<b>减</b>左端的数，就是长度。"]},
     {h:"容量单位", p:"<b>1 升(L) = 1000 毫升(mL)</b>。"}
   ],
   "std3.chinese.liangci": [
@@ -873,8 +935,11 @@ const LEARN = {
      eg:"10:45 + 1 时 40 分：分钟 45+40=85=1 时 25 分；小时 10+1+1=12，所以 <b>12:25</b>（如上图）。"}
   ],
   "std4.math.measure": [
-    {h:"长度", p:"<b>1 米 = 100 厘米</b>；1 千米 = 1000 米。"},
-    {h:"质量", p:"<b>1 千克(kg) = 1000 克(g)</b>。2 kg 500 g = 2500 g。"}
+    {h:"长度", p:"<b>1 米 = 100 厘米</b>；1 千米 = 1000 米。", fig:"ruler|0|6"},
+    {h:"质量", p:"<b>1 千克(kg) = 1000 克(g)</b>。2 kg 500 g = 2500 g。"},
+    {h:"加减前先统一单位", p:"单位不同<b>不能直接加减</b>！要先换成<b>同一个单位</b>。如 3 米 25 厘米 − 150 厘米，先把米换成厘米（325 厘米）再减。",
+     steps:["把所有数量换成<b>同一个单位</b>（通常换成小单位）。","按要求做加法或减法。","看清楚题目要的是哪个单位，再写答案。"],
+     eg:"3 米 25 厘米 − 150 厘米：3 米 25 厘米 = 325 厘米；325 − 150 = <b>175 厘米</b>。"}
   ],
   "std4.chinese.liangci": [
     {h:"动物量词各不同", p:"马用“<b>匹</b>”、牛用“头”、鱼用“条”、鸟用“只”。"},
@@ -1009,6 +1074,18 @@ function figStates(){
   const gas=[[20,6],[58,14],[34,38],[62,46],[12,48]];
   return svgWrap(104,box(14,"固态",grid)+box(120,"液态",loose)+box(226,"气态",gas),"颗粒越自由，状态越“松散”");
 }
+// 量尺：在刻度尺上量一段长度（end-start），教孩子“读尺要看两端的刻度差”
+function figRuler(start,end,unit){ start=+start; end=+end; unit=unit||"cm";
+  const max=Math.max(10, Math.ceil(end)), X=20, W=280, y=46, step=W/max;
+  let g=`<rect x="${X}" y="${y}" width="${W}" height="20" fill="#fff7e6" stroke="#b9770e" stroke-width="2"/>`;
+  for(let i=0;i<=max;i++){ const x=X+i*step, big=(i%5===0);
+    g+=`<line x1="${x}" y1="${y}" x2="${x}" y2="${y+(big?14:8)}" stroke="#b9770e" stroke-width="${big?2:1}"/>`;
+    if(big) g+=`<text x="${x}" y="${y+30}" font-size="11" text-anchor="middle" fill="#7f8c8d">${i}</text>`; }
+  // 被测物体（彩条）从 start 到 end
+  g+=`<rect x="${X+start*step}" y="${y-16}" width="${(end-start)*step}" height="13" rx="3" fill="#3498db" opacity="0.85"/>`;
+  g+=`<text x="${X+(start+end)/2*step}" y="${y-20}" font-size="13" font-weight="800" text-anchor="middle" fill="#2c3e50">${end-start} ${unit}</text>`;
+  return svgWrap(86,g,`从 ${start} 量到 ${end}：长度 = ${end} − ${start} = ${end-start} ${unit}`);
+}
 function FIG(spec){
   const p=String(spec).split("|"), t=p[0];
   if(t==="pv") return figPV(p[1]);
@@ -1018,6 +1095,7 @@ function FIG(spec){
   if(t==="clock") return figClock(p[1],p[2]);
   if(t==="magnet") return figMagnet();
   if(t==="states") return figStates();
+  if(t==="ruler") return figRuler(p[1],p[2],p[3]);
   return "";
 }
 
@@ -1272,9 +1350,10 @@ const BADGES = [
   {id:"streak8",   icon:"🔥", name:"连对达人", desc:"一次闯关中连续答对 8 题。"},
   {id:"subjClear", icon:"📚", name:"科目通",   desc:"通关某一科目的全部单元。"},
   {id:"wrongZero", icon:"🎯", name:"零错题",   desc:"把错题本里的题目全部攻克清空。"},
-  {id:"gamer",     icon:"🎮", name:"游戏全能", desc:"玩遍全部 6 款奖励小游戏。"},
+  {id:"gamer",     icon:"🎮", name:"游戏全能", desc:"玩遍全部 7 款奖励小游戏。"},
   {id:"bonusAce",  icon:"🚀", name:"奖励猎手", desc:"在一局奖励游戏里拿下 6 颗以上星星。"},
-  {id:"challengeMaster", icon:"⏱️", name:"限时高手", desc:"在限时挑战模式里全部答对通关一次。"}
+  {id:"challengeMaster", icon:"⏱️", name:"限时高手", desc:"在限时挑战模式里全部答对通关一次。"},
+  {id:"stars120",  icon:"🏆", name:"传奇学者", desc:"累计获得 120 颗星星。"}
 ];
 
 // 检查并解锁徽章。ctx 携带本次事件的瞬时信息（连对数、是否清空错题、奖励星数）。
@@ -1288,6 +1367,7 @@ function checkBadges(ctx){
   if(save.stars>=15) award("stars15");
   if(save.stars>=40) award("stars40");
   if(save.stars>=80) award("stars80");
+  if(save.stars>=120) award("stars120");
   if((ctx.streak||0)>=8) award("streak8");
   // 科目通：任一年级的任一科目全部单元都已完成
   scan: for(const g of ["std3","std4"]){
@@ -1298,7 +1378,7 @@ function checkBadges(ctx){
     }
   }
   if(ctx.wrongCleared && save.wrong.length===0) award("wrongZero");
-  if(Object.keys(save.bonusPlayed||{}).length>=6) award("gamer");
+  if(Object.keys(save.bonusPlayed||{}).length>=7) award("gamer");
   if((ctx.bonusStars||0)>=6) award("bonusAce");
   if(ctx.challengePerfect) award("challengeMaster");
 
@@ -1361,6 +1441,92 @@ function renderBadges(){
   $("badgeCount").textContent=`${got} / ${BADGES.length}`;
 }
 
+/* ============================================================
+   📊 学习报告（家长/老师）—— 汇总各单元掌握度，可复制分享
+   ============================================================ */
+function reportData(){
+  let totalUnits=0, doneUnits=0, perfectUnits=0, earnedStars=0, maxStars=0;
+  const grades=[];
+  for(const g of ["std3","std4"]){
+    const subs=SYLLABUS[g].subjects, sArr=[];
+    for(const sk in subs){
+      const tops=subs[sk].topics, tArr=[];
+      for(const tk in tops){
+        const key=`${g}.${sk}.${tk}`, done=!!save.completed[key], best=save.best[key]||0;
+        totalUnits++; maxStars+=3;
+        if(done){ doneUnits++; earnedStars+=best; if(best===3) perfectUnits++; }
+        tArr.push({name:tops[tk].name, done, best});
+      }
+      sArr.push({name:subs[sk].name, icon:subs[sk].icon, topics:tArr});
+    }
+    grades.push({key:g, name:SYLLABUS[g].name, subjects:sArr});
+  }
+  const badgeGot=Object.keys(save.badges).length;
+  return {grades, totalUnits, doneUnits, perfectUnits, earnedStars, maxStars,
+          badgeGot, badgeTotal:BADGES.length, stars:save.stars, points:save.points, wrong:save.wrong.length};
+}
+
+function renderReport(){
+  const d=reportData();
+  const stat=(v,l)=>`<div class="rptStat"><div class="v">${v}</div><div class="l">${l}</div></div>`;
+  let html=`<div class="rptSum">`
+    + stat(`${d.doneUnits}/${d.totalUnits}`,"已通关单元")
+    + stat(d.stars,"累计星星 ⭐")
+    + stat(`${d.perfectUnits}`,"满分单元 💯")
+    + stat(`${d.badgeGot}/${d.badgeTotal}`,"成就徽章 🏆")
+    + stat(d.points,"积分 🏅")
+    + stat(d.wrong,"待复习错题 📕")
+    + `</div>`;
+  d.grades.forEach(g=>{
+    g.subjects.forEach(s=>{
+      html+=`<div class="rptCard"><h3>${s.icon} ${g.name} · ${s.name}</h3>`;
+      s.topics.forEach(t=>{
+        const stars = t.done ? "⭐".repeat(t.best)+"☆".repeat(3-t.best) : "";
+        const right = t.done
+          ? `<span class="rptBar"><i style="width:${t.best/3*100}%"></i></span><span class="st">${stars}</span>`
+          : `<span class="st todo">未挑战</span>`;
+        html+=`<div class="rptRow"><span class="nm">${t.name}</span><span style="display:flex;align-items:center;gap:8px;">${right}</span></div>`;
+      });
+      html+=`</div>`;
+    });
+  });
+  $("reportBody").innerHTML=html;
+}
+
+function reportText(){
+  const d=reportData();
+  let s=`📊 星星学院 · 学习报告\n`;
+  s+=`累计星星：${d.stars} ⭐ | 积分：${d.points}\n`;
+  s+=`已通关单元：${d.doneUnits}/${d.totalUnits} | 满分单元：${d.perfectUnits} | 待复习错题：${d.wrong}\n`;
+  s+=`成就徽章：${d.badgeGot}/${d.badgeTotal}\n`;
+  d.grades.forEach(g=>{
+    s+=`\n【${g.name}】\n`;
+    g.subjects.forEach(sub=>{
+      s+=`  ${sub.name}：\n`;
+      sub.topics.forEach(t=>{
+        const mark = t.done ? "★".repeat(t.best)+"☆".repeat(3-t.best) : "— 未挑战";
+        s+=`    · ${t.name}  ${mark}\n`;
+      });
+    });
+  });
+  return s;
+}
+
+function copyReport(){
+  const txt=reportText();
+  const done=()=>{ const b=$("reportCopy"); const o=b.textContent; b.textContent="✅ 已复制"; Sound.playSfx("star"); setTimeout(()=>b.textContent=o,1600); };
+  if(navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(txt).then(done, ()=>fallbackCopy(txt,done));
+  } else { fallbackCopy(txt,done); }
+}
+function fallbackCopy(txt,done){
+  const ta=document.createElement("textarea");
+  ta.value=txt; ta.style.position="fixed"; ta.style.opacity="0"; document.body.appendChild(ta);
+  ta.select();
+  try{ document.execCommand("copy"); done(); }catch(e){ alert("复制失败，可手动选择文字。"); }
+  document.body.removeChild(ta);
+}
+
 let curSubj=null, curTopic=null, queue=[], idx=0, correct=0, streak=0, answered=false;
 let maxStreakInSession=0;
 let unlockedBonusThisQuiz=false;
@@ -1399,6 +1565,9 @@ $("hGrade").onclick = () => {
 // 成就徽章入口
 $("badgeBtn").onclick = () => { Sound.playSfx("star"); renderBadges(); show("badges"); };
 $("badgeBack").onclick = () => { renderHome(); show("home"); };
+$("reportBtn").onclick = () => { Sound.playSfx("star"); renderReport(); show("report"); };
+$("reportBack").onclick = () => { renderHome(); show("home"); };
+$("reportCopy").onclick = copyReport;
 
 // 错题本入口
 $("reviewBtn").onclick = () => {
@@ -1805,7 +1974,7 @@ $("rReplay").onclick=()=> { if(reviewMode) startReview(); else startQuiz(curSubj
 $("rBack").onclick=()=> { if(reviewMode){ reviewMode=false; renderHome(); show("home"); } else { openSubject(curSubj); } };
 $("rGameBtn").onclick=()=> {
   // 每次随机选择不同的奖励游戏，玩法不重复（避免连续两次相同）
-  const modes = ['collect', 'mathmeteor', 'plane', 'tank', 'memory', 'simon'];
+  const modes = ['collect', 'mathmeteor', 'plane', 'tank', 'memory', 'simon', 'mole'];
   let pick;
   do { pick = modes[Math.floor(Math.random() * modes.length)]; }
   while (pick === save.lastBonus && Math.random() < 0.85);
@@ -1813,6 +1982,8 @@ $("rGameBtn").onclick=()=> {
 
   if (pick === 'simon') {
     initSimon();
+  } else if (pick === 'mole') {
+    initMole();
   } else if (pick === 'memory') {
     initMemory();
   } else if (pick === 'collect') {
@@ -2622,6 +2793,122 @@ function endSimon(){
     `<p style="font-size:13px;color:#bbb;margin:6px 0;">记得越长，星星越多（最多 8 颗）· 积分 +${simonScore*10}</p>`;
   if(earned>=4){ burst(); Sound.playSfx("fanfare"); }
   setTimeout(()=>{ $("simonResult").style.display="none"; openSubject(curSubj); }, 3400);
+}
+
+/* ============================================================
+   🐹 答题打地鼠 — 第 7 款奖励游戏
+   顶部出现算式，9 个洞口随机冒出地鼠，每只举着一个数字。
+   敲举着【正确答案】的地鼠 +1 分；敲错数字或敲到 💣 扣 1 分。
+   算式与地鼠位置每局随机 —— 每次都不一样。寓教于乐练心算。
+   ============================================================ */
+let moleScore=0, moleTimeLeft=0, moleClock=null, moleRoundT=null, moleAns=0, moleOver=false;
+
+function initMole(){
+  moleScore=0; moleTimeLeft=30; moleOver=false;
+  $("moleScore").textContent="0";
+  $("moleTimer").textContent="30";
+  $("moleResult").style.display="none";
+  const grid=$("moleGrid"); grid.innerHTML="";
+  for(let i=0;i<9;i++){
+    const b=document.createElement("button");
+    b.className="moleHole"; b.dataset.i=i;
+    b.innerHTML='<span class="mole"></span>';
+    b.onclick=()=>moleTap(i,b);
+    grid.appendChild(b);
+  }
+  show("mole-screen");
+  Sound.playSfx("fanfare");
+  moleClock=setInterval(()=>{
+    moleTimeLeft--;
+    $("moleTimer").textContent=Math.max(0,moleTimeLeft);
+    if(moleTimeLeft<=0) endMole();
+  }, 1000);
+  moleRound();
+}
+
+// 生成一组与答案接近、互不相同的干扰数字
+function moleDistractors(ans, n){
+  const set=new Set(), out=[];
+  let guard=0;
+  while(out.length<n && guard++<40){
+    const off=rand(1,9)*(Math.random()<0.5?-1:1);
+    const v=ans+off;
+    if(v>=0 && v!==ans && !set.has(v)){ set.add(v); out.push(v); }
+  }
+  while(out.length<n) out.push(ans+out.length+1); // 兜底
+  return out;
+}
+
+function moleRound(){
+  if(moleOver) return;
+  clearTimeout(moleRoundT);
+  const grid=$("moleGrid");
+  [...grid.children].forEach(h=>{ h.className="moleHole"; h.querySelector(".mole").innerHTML=""; });
+
+  const eq=genEq(); moleAns=eq.ans;
+  $("moleEq").textContent=eq.text;
+
+  // 选 4~5 个洞口冒出地鼠：1 个正确答案、其余干扰数字、偶尔 1 个炸弹
+  const holes=shuffle([0,1,2,3,4,5,6,7,8]);
+  const popN=rand(4,5);
+  const chosen=holes.slice(0,popN);
+  const hasBomb=Math.random()<0.5;
+  const distract=moleDistractors(moleAns, popN-1-(hasBomb?1:0));
+  const fillers=shuffle([{num:moleAns,role:"ans"},
+    ...distract.map(d=>({num:d,role:"bad"})),
+    ...(hasBomb?[{role:"bomb"}]:[])]);
+
+  chosen.forEach((hi,k)=>{
+    const cell=fillers[k]; const hole=grid.children[hi];
+    const m=hole.querySelector(".mole");
+    if(cell.role==="bomb"){ hole.dataset.role="bomb"; m.innerHTML='<span class="face">💣</span>'; }
+    else { hole.dataset.role=cell.role; hole.dataset.num=cell.num;
+           m.innerHTML=`<span class="face">🐹</span><span class="num">${cell.num}</span>`; }
+    setTimeout(()=>{ if(!moleOver) hole.classList.add("up"); }, k*70);
+  });
+
+  // 地鼠停留一会儿后自动钻回去，换新一轮（没敲中不扣分，只是“跑掉了”）
+  moleRoundT=setTimeout(()=>{ if(!moleOver) moleRound(); }, 2300);
+}
+
+function moleTap(i, hole){
+  if(moleOver || !hole.classList.contains("up") || hole.classList.contains("hit")) return;
+  const role=hole.dataset.role;
+  if(role==="ans"){
+    moleScore++; $("moleScore").textContent=moleScore;
+    hole.classList.add("hit"); Sound.playSfx("correct"); popEmoji("✅ +1");
+    clearTimeout(moleRoundT);
+    setTimeout(()=>{ if(!moleOver) moleRound(); }, 420);
+  } else if(role==="bomb"){
+    moleScore=Math.max(0,moleScore-1); $("moleScore").textContent=moleScore;
+    hole.classList.add("hit"); Sound.playSfx("explosion"); popEmoji("💥 -1");
+    hole.classList.remove("up");
+  } else {
+    moleScore=Math.max(0,moleScore-1); $("moleScore").textContent=moleScore;
+    hole.classList.add("bad","hit"); Sound.playSfx("wrong"); popEmoji("❌ -1");
+    hole.classList.remove("up");   // 敲错的地鼠缩回，正确的还在，可以再敲
+  }
+}
+
+function endMole(){
+  moleOver=true;
+  if(moleClock){ clearInterval(moleClock); moleClock=null; }
+  clearTimeout(moleRoundT);
+  const earned=Math.min(8, Math.floor(moleScore/3));   // 每 3 分换 1 颗星（更难拿）
+  save.stars+=earned; save.points+=moleScore*10;
+  save.bonusPlayed["mole"]=true;
+  persist(); refreshHud();
+  checkBadges({bonusStars:earned});
+
+  $("moleTimer").textContent="0";
+  $("moleResult").style.display="flex";
+  $("moleResult").innerHTML =
+    `<h2 style="color:var(--gold);margin:0 0 8px;">🏁 打地鼠结束</h2>`+
+    `<p style="margin:4px 0;">敲中正确答案 <b>${moleScore}</b> 次</p>`+
+    `<p style="color:var(--gold);font-weight:800;font-size:20px;margin:8px 0;">${earned>0?`获得 ${earned} 颗额外星星 ⭐`:"再快、再准一点就能拿星啦！"}</p>`+
+    `<p style="font-size:13px;color:#bbb;margin:6px 0;">每 3 分换 1 颗星（最多 8 颗）· 积分 +${moleScore*10}</p>`;
+  if(earned>=4){ burst(); Sound.playSfx("fanfare"); }
+  setTimeout(()=>{ $("moleResult").style.display="none"; openSubject(curSubj); }, 3400);
 }
 
 // Run Grade Screen by default
