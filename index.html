@@ -142,6 +142,8 @@
   .moleHole .num{background:#fff; color:#2c3e50; font-weight:800; font-size:clamp(15px,3.6vw,22px); border-radius:12px; padding:1px 10px; box-shadow:0 2px 4px rgba(0,0,0,.25);}
   .moleHole.hit .mole{filter:saturate(.4) brightness(1.2);}
   .moleHole.bad .num{background:#fdecea; color:#c0392b;}
+  .moleHole.gold{box-shadow:inset 0 8px 14px rgba(0,0,0,.45), 0 0 14px 3px rgba(241,196,15,.7);}
+  .moleHole.gold .num{background:linear-gradient(135deg,#fff3c4,#f1c40f); color:#7a5b00;}
 
   /* 学习报告 */
   .rptSum{display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px; margin-bottom:14px;}
@@ -1987,7 +1989,7 @@ $("rGameBtn").onclick=()=> {
   } else if (pick === 'memory') {
     initMemory();
   } else if (pick === 'collect') {
-    const weathers = ['normal', 'wind', 'storm', 'drift', 'anomaly'];
+    const weathers = ['normal', 'wind', 'storm', 'drift', 'anomaly', 'blackhole', 'warp'];
     initGame(weathers[Math.floor(Math.random() * weathers.length)], 'collect');
   } else {
     initGame('normal', pick);
@@ -2060,7 +2062,9 @@ const WEATHER_DATA = {
   wind: { name: '太阳风暴 💨', desc: '强风横扫！所有元素向右倾斜下落。', color: '#2c1e15', speedMult: 1.1, wind: 2.2, spawnRate: 500, cometRate: 0.3 },
   storm: { name: '流星暴雨 ☄️', desc: '下落速度极快，彗星变多！但钻石星价值 +3 颗星！', color: '#25152c', speedMult: 1.8, wind: 0, spawnRate: 350, cometRate: 0.45 },
   drift: { name: '星云漂移 ☁️', desc: '进入低重力星云，元素左右摇摆，缓慢飘落。', color: '#0c2229', speedMult: 0.6, wind: 0, spawnRate: 700, cometRate: 0.2, sineDrift: true },
-  anomaly: { name: '重力反常 🌀', desc: '重力场混乱！元素下落时会突然加速或急停！', color: '#1f0d2c', speedMult: 1.0, wind: 0, spawnRate: 500, cometRate: 0.3, gravityFluctuate: true }
+  anomaly: { name: '重力反常 🌀', desc: '重力场混乱！元素下落时会突然加速或急停！', color: '#1f0d2c', speedMult: 1.0, wind: 0, spawnRate: 500, cometRate: 0.3, gravityFluctuate: true },
+  blackhole: { name: '黑洞引力 🕳️', desc: '中央黑洞把所有元素往中间拽，落点很难捉摸，彗星也变多！', color: '#0a0a18', speedMult: 1.2, wind: 0, spawnRate: 460, cometRate: 0.34, pullCenter: true },
+  warp: { name: '时空扭曲 ⚡', desc: '时间忽快忽慢！所有元素的下落速度像波浪一样一阵快一阵慢。', color: '#101a2c', speedMult: 1.0, wind: 0, spawnRate: 480, cometRate: 0.3, warp: true }
 };
 
 let gameCanvas = $("gameCanvas");
@@ -2078,8 +2082,34 @@ let gameMode = 'collect';   // 'collect' | 'mathmeteor' | 'plane' | 'tank'
 let mathEq = null;
 let gameDuration = 15;
 let starDiv = 3;            // 多少分换 1 颗星（越大越难）
+let gameStartMs = 0;       // 本局开始时间（用于难度随时间提升）
+let combo = 0, comboBest = 0;   // 连续接对的连击数（越长，得分倍率越高）
 // 射击类游戏状态
 let bullets = [], enemies = [], eBullets = [], lastShot = 0, flash = 0, shooterSpeed = 1;
+
+// 难度随时间 + 分数提升：越往后越快、生成越密（封顶防止失控）
+function difficultyRamp(){
+  const secs = (Date.now() - gameStartMs) / 1000;
+  return Math.min(2.4, 1 + secs * 0.05 + gameScore * 0.012);
+}
+// 连击倍率：每连对 3 次，得分倍率 +1（最多 ×4）
+function comboMult(){ return Math.min(4, 1 + Math.floor(combo / 3)); }
+function bumpCombo(){ combo++; comboBest = Math.max(comboBest, combo); }
+// 在画布左上角画连击与当前速度等级（给玩家即时反馈）
+function drawComboBadge(){
+  const lvl = difficultyRamp();
+  gameCtx.textAlign = "left"; gameCtx.textBaseline = "top";
+  gameCtx.font = "bold 13px sans-serif";
+  gameCtx.fillStyle = "rgba(255,255,255,0.55)";
+  gameCtx.fillText("速度 ×" + lvl.toFixed(1), 8, 8);
+  if (combo >= 2){
+    const cx = comboMult();
+    gameCtx.font = "bold 16px sans-serif";
+    gameCtx.fillStyle = cx >= 3 ? "#f1c40f" : "#2ecc71";
+    gameCtx.fillText("🔥 连击 " + combo + (cx>1?"  ×"+cx:""), 8, 24);
+  }
+  gameCtx.textAlign = "center"; gameCtx.textBaseline = "middle";
+}
 
 // 射击类奖励游戏配置（飞机大战 / 坦克大战）
 const SHOOTER = {
@@ -2144,6 +2174,8 @@ function initGame(weatherType, mode) {
     $("weatherBadge").style.backgroundColor =
       weatherType === 'storm' ? 'var(--bad)' :
       weatherType === 'wind' ? '#e67e22' :
+      weatherType === 'blackhole' ? '#111' :
+      weatherType === 'warp' ? '#6c5ce7' :
       weatherType === 'drift' ? 'var(--accent)' : 'var(--gold)';
     $("gameDesc").textContent = activeWeather.desc + " 接住 ⭐ 💎 获得星星，小心避开 ☄️！";
     $("gameWeather").textContent = `天气: ${activeWeather.name}`;
@@ -2213,6 +2245,8 @@ function startGame() {
   gameTimeLeft = gameDuration;
   gameItems = [];
   bullets = []; enemies = []; eBullets = []; lastShot = 0; flash = 0;
+  combo = 0; comboBest = 0;
+  gameStartMs = Date.now();
   lastSpawnTime = Date.now();
 
   Sound.playSfx("fanfare");
@@ -2234,7 +2268,7 @@ function startGame() {
 }
 
 function spawnItem() {
-  const speed = (Math.random() * 2.5 + 2.5) * activeWeather.speedMult;
+  const speed = (Math.random() * 2.5 + 2.5) * activeWeather.speedMult * difficultyRamp();
   const base = {
     x: Math.random() * (gameCanvas.width - 40) + 20,
     y: -30,
@@ -2285,9 +2319,9 @@ function gameLoop() {
     gameCtx.fillRect(px, py, 1.5, 1.5);
   }
   
-  // 2. Spawn items
+  // 2. Spawn items（生成间隔随难度缩短，越往后越密集）
   const now = Date.now();
-  if (now - lastSpawnTime > activeWeather.spawnRate) {
+  if (now - lastSpawnTime > activeWeather.spawnRate / difficultyRamp()) {
     spawnItem();
     lastSpawnTime = now;
   }
@@ -2320,10 +2354,19 @@ function gameLoop() {
       // Erratic gravity pulsing
       const pulse = Math.sin(Date.now() / 150 + item.phase);
       item.y += item.vy * (pulse > 0.4 ? 1.9 : pulse < -0.4 ? 0.3 : 1.0);
+    } else if (activeWeather.warp) {
+      // 时空扭曲：下落速度像波浪一样忽快忽慢
+      const wf = 1 + 0.75 * Math.sin(Date.now() / 600 + item.phase);
+      item.y += item.vy * Math.max(0.2, wf);
     } else {
       item.y += item.vy;
     }
-    
+
+    // 黑洞引力：把元素往画面中央横向拉
+    if (activeWeather.pullCenter) {
+      item.x += (gameCanvas.width / 2 - item.x) * 0.013;
+    }
+
     item.x += item.vx;
     
     // Bounce off walls horizontally
@@ -2353,36 +2396,45 @@ function gameLoop() {
     const dy = Math.abs(item.y - (gameCanvas.height - 35));
 
     if (dy < 25 && dx < 30) {
-      // Caught!
+      // Caught! 连击越长，得分倍率越高（comboMult）
+      const cx = comboMult();
+      const cTag = cx > 1 ? ` 连击x${cx}` : "";
       if (item.type === "num") {
         if (item.num === mathEq.ans) {
-          gameScore += 1;
+          bumpCombo();
+          const g = 1 * comboMult();
+          gameScore += g;
           Sound.playSfx("star");
-          popText(`✔ +1`, item.x, item.y);
+          popText(`✔ +${g}${combo>=3?` 连击x${comboMult()}`:""}`, item.x, item.y);
           mathEq = genEq();                       // 换新算式
           $("gameWeather").textContent = `算式: ${mathEq.text}`;
         } else {
+          combo = 0;
           gameScore = Math.max(0, gameScore - 1);
           Sound.playSfx("wrong");
-          popText(`✘ -1`, item.x, item.y);
+          popText(`✘ -1 断连`, item.x, item.y);
         }
       }
       else if (item.type === "⭐") {
-        gameScore += 1;
+        bumpCombo();
+        const g = 1 * cx;
+        gameScore += g;
         Sound.playSfx("star");
-        popText("⭐ +1", item.x, item.y);
+        popText(`⭐ +${g}${cTag}`, item.x, item.y);
       }
       else if (item.type === "💎") {
-        const reward = activeWeather.name.includes("流星") ? 3 : 2;
+        bumpCombo();
+        const reward = (activeWeather.name.includes("流星") ? 3 : 2) * cx;
         gameScore += reward;
         Sound.playSfx("star");
-        popText(`💎 +${reward}`, item.x, item.y);
+        popText(`💎 +${reward}${cTag}`, item.x, item.y);
       }
       else if (item.type === "☄️") {
-        // Warning: Comets deduct stars!
+        // Warning: Comets deduct stars + 断连!
+        combo = 0;
         gameScore = Math.max(0, gameScore - 1);
         Sound.playSfx("comet");
-        popText("☄️ -1", item.x, item.y);
+        popText("☄️ -1 断连", item.x, item.y);
       }
 
       $("gameStars").textContent = gameScore;
@@ -2396,9 +2448,10 @@ function gameLoop() {
     }
   }
   
-  // Render pop scores
+  // Render pop scores + 连击/速度提示
   updatePopTexts();
-  
+  drawComboBadge();
+
   gameLoopId = requestAnimationFrame(gameLoop);
 }
 
@@ -2430,11 +2483,13 @@ function updatePopTexts() {
 function spawnEnemy() {
   const cfg = SHOOTER[gameMode];
   const emoji = cfg.foes[rand(0, cfg.foes.length - 1)];
-  const tough = Math.random() < 0.28;              // ~28% 为耐打敌人（要打 2 下）
+  const ramp = difficultyRamp();                   // 越往后敌人越快
+  // 耐打敌人比例随难度上升（28% → 最高约 48%），更具挑战
+  const tough = Math.random() < Math.min(0.48, 0.28 + (ramp - 1) * 0.18);
   if (cfg.move === 'down') {
     enemies.push({
       x: rand(28, gameCanvas.width - 28), y: -20, emoji: emoji,
-      vy: (1.4 + Math.random() * 1.4) * shooterSpeed,
+      vy: (1.4 + Math.random() * 1.4) * shooterSpeed * ramp,
       vx: (Math.random() - 0.5) * 2.4, phase: Math.random() * 100,
       hp: tough ? 2 : 1, lastFire: Date.now()
     });
@@ -2443,7 +2498,7 @@ function spawnEnemy() {
     enemies.push({
       x: fromLeft ? -20 : gameCanvas.width + 20,
       y: rand(40, 150), emoji: emoji,
-      vx: (fromLeft ? 1 : -1) * (1.3 + Math.random() * 1.6) * shooterSpeed,
+      vx: (fromLeft ? 1 : -1) * (1.3 + Math.random() * 1.6) * shooterSpeed * ramp,
       vy: 0, phase: 0, hp: tough ? 2 : 1, lastFire: Date.now()
     });
   }
@@ -2470,8 +2525,8 @@ function updateShooter() {
     Sound.playSfx("laser");
   }
 
-  // 生成敌人
-  if (now - lastSpawnTime > activeWeather.spawnRate) { spawnEnemy(); lastSpawnTime = now; }
+  // 生成敌人（间隔随难度缩短）
+  if (now - lastSpawnTime > activeWeather.spawnRate / difficultyRamp()) { spawnEnemy(); lastSpawnTime = now; }
 
   // 玩家子弹（向上）
   gameCtx.fillStyle = (gameMode === 'plane') ? "#f1c40f" : "#2ecc71";
@@ -2485,8 +2540,10 @@ function updateShooter() {
       if (Math.abs(b.x - en.x) < 22 && Math.abs(b.y - en.y) < 22) {
         bullets.splice(i, 1); en.hp--;
         if (en.hp <= 0) {
-          gameScore += 1; Sound.playSfx("explosion");
-          popText("💥 +1", en.x, en.y); enemies.splice(j, 1);
+          bumpCombo();
+          const g = 1 * comboMult();
+          gameScore += g; Sound.playSfx("explosion");
+          popText(`💥 +${g}${combo>=3?` 连击x${comboMult()}`:""}`, en.x, en.y); enemies.splice(j, 1);
           $("gameStars").textContent = gameScore;
         } else { popText("✦", en.x, en.y); }
         break;
@@ -2508,8 +2565,8 @@ function updateShooter() {
       en.x += en.vx;
       if (en.x < -30 || en.x > W + 30) { enemies.splice(j, 1); continue; }
     }
-    // 敌人开火（向下）
-    if (Math.random() < cfg.enemyFire && en.y < H - 90) {
+    // 敌人开火（向下，火力随难度增强）
+    if (Math.random() < cfg.enemyFire * difficultyRamp() && en.y < H - 90) {
       eBullets.push({ x: en.x, y: en.y + 14 });
     }
     if (en.hp > 1) {   // 耐打敌人加个红圈提示
@@ -2528,8 +2585,9 @@ function updateShooter() {
     if (b.y > H + 16) { eBullets.splice(i, 1); continue; }
     if (Math.abs(b.x - pandaX) < 22 && Math.abs(b.y - py) < 24) {
       eBullets.splice(i, 1);
+      combo = 0;
       gameScore = Math.max(0, gameScore - 1); flash = 12;
-      Sound.playSfx("comet"); popText("-1", pandaX, py - 26);
+      Sound.playSfx("comet"); popText("-1 断连", pandaX, py - 26);
       $("gameStars").textContent = gameScore;
     }
   }
@@ -2544,6 +2602,7 @@ function updateShooter() {
   gameCtx.fillText(cfg.player, pandaX, py);
 
   updatePopTexts();
+  drawComboBadge();
 }
 
 // 把游戏内分数换算成奖励星星（更难：每 starDiv 分换 1 星，最多 8 星）
@@ -2556,7 +2615,9 @@ function endGame() {
 
   Sound.playSfx("fanfare");
 
-  const earned = scoreToStars();
+  // 连击奖励：本局最高连击越长，额外送星（鼓励连续接对，封顶 8 星）
+  const comboBonus = comboBest >= 9 ? 2 : comboBest >= 6 ? 1 : 0;
+  const earned = Math.min(8, scoreToStars() + comboBonus);
   save.stars += earned;
   save.points += gameScore * 10;
   save.bonusPlayed[gameMode] = true;
@@ -2582,6 +2643,9 @@ function endGame() {
   gameCtx.fillStyle = "rgba(255,255,255,0.7)";
   gameCtx.font = "13px sans-serif";
   gameCtx.fillText(`每 ${starDiv} 分换 1 星 · 积分 +${gameScore * 10}`, gameCanvas.width / 2, gameCanvas.height / 2 + 52);
+  gameCtx.fillStyle = comboBest >= 6 ? "#f1c40f" : "rgba(255,255,255,0.7)";
+  gameCtx.font = comboBest >= 6 ? "bold 14px sans-serif" : "13px sans-serif";
+  gameCtx.fillText(`🔥 最高连击 ${comboBest}${comboBonus>0?`　连击奖励 +${comboBonus} ⭐`:""}`, gameCanvas.width / 2, gameCanvas.height / 2 + 74);
 
   // Switch Done Screen Game Trigger Off
   $("bonusUnlockCard").style.display = "none";
@@ -2618,13 +2682,15 @@ let memTimeLeft = 0, memTimer = null;
 
 function initMemory(){
   const pool = (MATCH_POOL[save.grade] || MATCH_POOL.std4).slice();
-  const pairs = shuffle(pool).slice(0, 6);          // 每局随机 6 对 = 12 张牌
+  // 每局随机 6~8 对（牌越多越难），所以局与局之间难度也不同
+  const pairCount = Math.min(pool.length, rand(6,8));
+  const pairs = shuffle(pool).slice(0, pairCount);
   memTotal = pairs.length;
   memCards = [];
   pairs.forEach((p,i)=>{ memCards.push({pid:i, txt:p[0]}); memCards.push({pid:i, txt:p[1]}); });
   shuffle(memCards);
   memOpen = []; memMatched = 0; memBusy = false;
-  memTimeLeft = 45;
+  memTimeLeft = 38 + pairCount*2;                   // 牌多给一点点时间，但仍偏紧
 
   $("memMatched").textContent = `0 / ${memTotal}`;
   $("memTimer").textContent = memTimeLeft;
@@ -2713,10 +2779,10 @@ const SIMON_PADS = [
   {emoji:"🔵", color:"#3498db", freq:261.63}, // C4
   {emoji:"🟡", color:"#f1c40f", freq:493.88}  // B4
 ];
-let simonSeq=[], simonInput=0, simonRound=0, simonScore=0, simonBusy=false;
+let simonSeq=[], simonInput=0, simonRound=0, simonScore=0, simonBusy=false, simonReverse=false;
 
 function initSimon(){
-  simonSeq=[]; simonInput=0; simonRound=0; simonScore=0; simonBusy=true;
+  simonSeq=[]; simonInput=0; simonRound=0; simonScore=0; simonBusy=true; simonReverse=false;
   $("simonRound").textContent="0";
   $("simonResult").style.display="none";
   $("simonMsg").textContent="看乐乐熊猫的节奏，照着按一遍！";
@@ -2732,19 +2798,25 @@ function initSimon(){
   setTimeout(simonNext, 900);
 }
 
-function simonFlash(i, cb){
+function simonFlash(i, cb, dur){
   const b=$("simonBoard").children[i];
   b.classList.add("lit");
-  Sound.tone(SIMON_PADS[i].freq, 0.35, 'triangle');
-  setTimeout(()=>{ b.classList.remove("lit"); cb&&cb(); }, 380);
+  Sound.tone(SIMON_PADS[i].freq, Math.max(0.16,(dur||380)/1000), 'triangle');
+  setTimeout(()=>{ b.classList.remove("lit"); cb&&cb(); }, dur||380);
 }
 
 function simonPlaySeq(){
   simonBusy=true;
   let k=0;
+  // 节奏随回合加快：回合越多，每个音越短、间隔越小（更难记）
+  const dur=Math.max(170, 380-simonRound*22), gap=Math.max(110, 220-simonRound*12);
   const step=()=>{
-    if(k>=simonSeq.length){ simonBusy=false; simonInput=0; $("simonMsg").textContent="该你了！照着按 👆"; return; }
-    simonFlash(simonSeq[k], ()=>{ k++; setTimeout(step, 220); });
+    if(k>=simonSeq.length){
+      simonBusy=false; simonInput=0;
+      $("simonMsg").textContent = simonReverse ? "🔄 倒着按！从最后一个开始 👆" : "该你了！照着按 👆";
+      return;
+    }
+    simonFlash(simonSeq[k], ()=>{ k++; setTimeout(step, gap); }, dur);
   };
   step();
 }
@@ -2752,18 +2824,23 @@ function simonPlaySeq(){
 function simonNext(){
   simonRound++;
   $("simonRound").textContent=simonRound;
-  $("simonMsg").textContent="仔细看节奏…🐼";
+  // 第 4 回合起，约 1/3 概率出现“倒序”挑战（要反着按一遍）——增加复杂度与变化
+  simonReverse = simonRound>=4 && Math.random()<0.32;
+  $("simonMsg").textContent = simonReverse ? "🔄 这一段要倒着按，看仔细…🐼" : "仔细看节奏…🐼";
   simonSeq.push(Math.floor(Math.random()*4));
-  setTimeout(simonPlaySeq, 520);
+  setTimeout(simonPlaySeq, 560);
 }
 
 function simonTap(i,b){
   if(simonBusy) return;
   b.classList.add("lit"); Sound.tone(SIMON_PADS[i].freq, 0.25, 'triangle');
   setTimeout(()=>b.classList.remove("lit"), 200);
-  if(i===simonSeq[simonInput]){
+  const expected = simonReverse ? simonSeq[simonSeq.length-1-simonInput] : simonSeq[simonInput];
+  if(i===expected){
     simonInput++;
     if(simonInput===simonSeq.length){
+      // 倒序回合答对，额外加分（更难，奖励更高）
+      if(simonReverse) simonScore+=simonRound;
       simonScore+=simonRound;
       simonBusy=true;
       Sound.playSfx("correct"); popEmoji("✅");
@@ -2802,9 +2879,11 @@ function endSimon(){
    算式与地鼠位置每局随机 —— 每次都不一样。寓教于乐练心算。
    ============================================================ */
 let moleScore=0, moleTimeLeft=0, moleClock=null, moleRoundT=null, moleAns=0, moleOver=false;
+let moleCombo=0, moleComboBest=0;   // 连续敲对的连击（断连归零）
 
 function initMole(){
   moleScore=0; moleTimeLeft=30; moleOver=false;
+  moleCombo=0; moleComboBest=0;
   $("moleScore").textContent="0";
   $("moleTimer").textContent="30";
   $("moleResult").style.display="none";
@@ -2843,49 +2922,62 @@ function moleRound(){
   if(moleOver) return;
   clearTimeout(moleRoundT);
   const grid=$("moleGrid");
-  [...grid.children].forEach(h=>{ h.className="moleHole"; h.querySelector(".mole").innerHTML=""; });
+  [...grid.children].forEach(h=>{ h.className="moleHole"; h.removeAttribute("data-role"); h.removeAttribute("data-num"); h.querySelector(".mole").innerHTML=""; });
 
   const eq=genEq(); moleAns=eq.ans;
-  $("moleEq").textContent=eq.text;
 
-  // 选 4~5 个洞口冒出地鼠：1 个正确答案、其余干扰数字、偶尔 1 个炸弹
-  const holes=shuffle([0,1,2,3,4,5,6,7,8]);
-  const popN=rand(4,5);
-  const chosen=holes.slice(0,popN);
-  const hasBomb=Math.random()<0.5;
-  const distract=moleDistractors(moleAns, popN-1-(hasBomb?1:0));
-  const fillers=shuffle([{num:moleAns,role:"ans"},
-    ...distract.map(d=>({num:d,role:"bad"})),
-    ...(hasBomb?[{role:"bomb"}]:[])]);
+  // 难度随分数提升：等级越高，地鼠越多、停留越短、炸弹越多、金鼠越常见
+  const level = 1 + Math.floor(moleScore/4);
+  const frenzy = Math.random() < Math.min(0.30, 0.06 + level*0.03);   // 偶发“狂热轮”：满屏地鼠
+  let popN = frenzy ? rand(7,9) : Math.min(7, rand(4,5) + Math.floor((level-1)/2));
+  const bombs = frenzy ? rand(1,2)
+              : (Math.random() < Math.min(0.8, 0.4 + level*0.08) ? ((level>=4 && Math.random()<0.3) ? 2 : 1) : 0);
+  const golden = Math.random() < Math.min(0.45, 0.12 + level*0.05);    // 金色地鼠举正确答案，+2 分
 
-  chosen.forEach((hi,k)=>{
-    const cell=fillers[k]; const hole=grid.children[hi];
-    const m=hole.querySelector(".mole");
+  const distractN = Math.max(0, popN - 1 - bombs);
+  const distract = moleDistractors(moleAns, distractN);
+  const fillers = shuffle([
+    {num:moleAns, role: golden ? "gold" : "ans"},
+    ...distract.map(d=>({num:d, role:"bad"})),
+    ...Array.from({length:bombs}, ()=>({role:"bomb"}))
+  ]);
+
+  const holes = shuffle([0,1,2,3,4,5,6,7,8]).slice(0, fillers.length);
+  holes.forEach((hi,k)=>{
+    const cell=fillers[k]; const hole=grid.children[hi]; const m=hole.querySelector(".mole");
     if(cell.role==="bomb"){ hole.dataset.role="bomb"; m.innerHTML='<span class="face">💣</span>'; }
+    else if(cell.role==="gold"){ hole.dataset.role="gold"; hole.dataset.num=cell.num; hole.classList.add("gold");
+           m.innerHTML=`<span class="face">🌟</span><span class="num">${cell.num}</span>`; }
     else { hole.dataset.role=cell.role; hole.dataset.num=cell.num;
            m.innerHTML=`<span class="face">🐹</span><span class="num">${cell.num}</span>`; }
-    setTimeout(()=>{ if(!moleOver) hole.classList.add("up"); }, k*70);
+    setTimeout(()=>{ if(!moleOver) hole.classList.add("up"); }, k*55);
   });
 
-  // 地鼠停留一会儿后自动钻回去，换新一轮（没敲中不扣分，只是“跑掉了”）
-  moleRoundT=setTimeout(()=>{ if(!moleOver) moleRound(); }, 2300);
+  $("moleEq").textContent = (level>=2?`Lv${level} · `:"") + eq.text;
+
+  // 地鼠停留时间随等级缩短（狂热轮更短），越往后越难
+  const hideMs = Math.max(1050, 2300 - level*170 - (frenzy?300:0));
+  moleRoundT=setTimeout(()=>{ if(!moleOver) moleRound(); }, hideMs);
 }
 
 function moleTap(i, hole){
   if(moleOver || !hole.classList.contains("up") || hole.classList.contains("hit")) return;
   const role=hole.dataset.role;
-  if(role==="ans"){
-    moleScore++; $("moleScore").textContent=moleScore;
-    hole.classList.add("hit"); Sound.playSfx("correct"); popEmoji("✅ +1");
+  if(role==="ans" || role==="gold"){
+    const pts = role==="gold" ? 2 : 1;
+    moleScore+=pts; moleCombo++; moleComboBest=Math.max(moleComboBest,moleCombo);
+    $("moleScore").textContent=moleScore;
+    hole.classList.add("hit"); Sound.playSfx(role==="gold"?"fanfare":"correct");
+    popEmoji((role==="gold"?"🌟 +2":"✅ +1") + (moleCombo>=3?` 🔥x${moleCombo}`:""));
     clearTimeout(moleRoundT);
-    setTimeout(()=>{ if(!moleOver) moleRound(); }, 420);
+    setTimeout(()=>{ if(!moleOver) moleRound(); }, 360);
   } else if(role==="bomb"){
-    moleScore=Math.max(0,moleScore-1); $("moleScore").textContent=moleScore;
-    hole.classList.add("hit"); Sound.playSfx("explosion"); popEmoji("💥 -1");
+    moleScore=Math.max(0,moleScore-1); moleCombo=0; $("moleScore").textContent=moleScore;
+    hole.classList.add("hit"); Sound.playSfx("explosion"); popEmoji("💥 -1 断连");
     hole.classList.remove("up");
   } else {
-    moleScore=Math.max(0,moleScore-1); $("moleScore").textContent=moleScore;
-    hole.classList.add("bad","hit"); Sound.playSfx("wrong"); popEmoji("❌ -1");
+    moleScore=Math.max(0,moleScore-1); moleCombo=0; $("moleScore").textContent=moleScore;
+    hole.classList.add("bad","hit"); Sound.playSfx("wrong"); popEmoji("❌ -1 断连");
     hole.classList.remove("up");   // 敲错的地鼠缩回，正确的还在，可以再敲
   }
 }
@@ -2894,7 +2986,8 @@ function endMole(){
   moleOver=true;
   if(moleClock){ clearInterval(moleClock); moleClock=null; }
   clearTimeout(moleRoundT);
-  const earned=Math.min(8, Math.floor(moleScore/3));   // 每 3 分换 1 颗星（更难拿）
+  const comboBonus = moleComboBest>=8 ? 2 : moleComboBest>=5 ? 1 : 0;   // 连击越长额外送星
+  const earned=Math.min(8, Math.floor(moleScore/3) + comboBonus);       // 每 3 分换 1 颗星（更难拿）
   save.stars+=earned; save.points+=moleScore*10;
   save.bonusPlayed["mole"]=true;
   persist(); refreshHud();
@@ -2904,9 +2997,9 @@ function endMole(){
   $("moleResult").style.display="flex";
   $("moleResult").innerHTML =
     `<h2 style="color:var(--gold);margin:0 0 8px;">🏁 打地鼠结束</h2>`+
-    `<p style="margin:4px 0;">敲中正确答案 <b>${moleScore}</b> 次</p>`+
+    `<p style="margin:4px 0;">得分 <b>${moleScore}</b> 分 · 最高连击 🔥 <b>${moleComboBest}</b></p>`+
     `<p style="color:var(--gold);font-weight:800;font-size:20px;margin:8px 0;">${earned>0?`获得 ${earned} 颗额外星星 ⭐`:"再快、再准一点就能拿星啦！"}</p>`+
-    `<p style="font-size:13px;color:#bbb;margin:6px 0;">每 3 分换 1 颗星（最多 8 颗）· 积分 +${moleScore*10}</p>`;
+    `<p style="font-size:13px;color:#bbb;margin:6px 0;">每 3 分换 1 颗星${comboBonus>0?`　连击奖励 +${comboBonus} ⭐`:""}（最多 8 颗）· 积分 +${moleScore*10}</p>`;
   if(earned>=4){ burst(); Sound.playSfx("fanfare"); }
   setTimeout(()=>{ $("moleResult").style.display="none"; openSubject(curSubj); }, 3400);
 }
