@@ -145,6 +145,22 @@
   .moleHole.gold{box-shadow:inset 0 8px 14px rgba(0,0,0,.45), 0 0 14px 3px rgba(241,196,15,.7);}
   .moleHole.gold .num{background:linear-gradient(135deg,#fff3c4,#f1c40f); color:#7a5b00;}
 
+  /* 🪜 快算阶梯（第 8 款奖励游戏） */
+  .ladWrap{display:flex; gap:12px; align-items:stretch; max-width:460px; margin:6px auto;}
+  .ladTrack{position:relative; width:74px; flex:none; border-radius:16px; background:linear-gradient(#1b2750,#0d1430); box-shadow:inset 0 0 12px rgba(0,0,0,.5); overflow:hidden;}
+  .ladTrack .rung{position:absolute; left:8px; right:8px; height:3px; background:rgba(255,255,255,.18); border-radius:3px;}
+  .ladPanda{position:absolute; left:0; right:0; text-align:center; font-size:32px; line-height:1; transition:bottom .3s cubic-bezier(0.175,0.885,0.32,1.275);}
+  .ladTrack .goal{position:absolute; left:0; right:0; text-align:center; font-size:18px; top:6px;}
+  .ladRight{flex:1; display:flex; flex-direction:column; gap:10px;}
+  .ladEq{text-align:center; font-size:clamp(26px,7vw,40px); font-weight:800; color:#fff; background:linear-gradient(135deg,#2c3e7a,#1a2550); border-radius:14px; padding:14px 8px;}
+  .ladBar{height:8px; border-radius:6px; background:rgba(255,255,255,.15); overflow:hidden;}
+  .ladBar > i{display:block; height:100%; width:100%; background:linear-gradient(90deg,#2ecc71,#f1c40f); transition:width .1s linear;}
+  .ladChoices{display:grid; grid-template-columns:repeat(3,1fr); gap:10px;}
+  .ladChoice{border:none; border-radius:14px; padding:16px 6px; font-size:clamp(20px,5vw,30px); font-weight:800; color:#1a2550; background:linear-gradient(135deg,#eaf2ff,#c9dcff); cursor:pointer; box-shadow:0 5px 0 rgba(0,0,0,.18); transition:transform .08s;}
+  .ladChoice:active{transform:translateY(3px); box-shadow:0 2px 0 rgba(0,0,0,.18);}
+  .ladChoice.ok{background:linear-gradient(135deg,#abebc6,#2ecc71); color:#fff;}
+  .ladChoice.no{background:linear-gradient(135deg,#f5b7b1,#e74c3c); color:#fff;}
+
   /* 学习报告 */
   .rptSum{display:grid; grid-template-columns:repeat(auto-fit,minmax(110px,1fr)); gap:10px; margin-bottom:14px;}
   .rptStat{background:var(--card); border-radius:16px; box-shadow:var(--shadow); padding:12px; text-align:center;}
@@ -371,6 +387,28 @@
     <div class="footnote" style="color:#a9c2f0; text-shadow:none;">每局算式随机、地鼠位置随机 · 每 3 分换 1 颗星星（最多 8 颗）· 每次都不一样</div>
   </section>
 
+  <!-- ===== 🪜 快算阶梯（第 8 款奖励游戏） ===== -->
+  <section id="ladder-screen" class="screen">
+    <div class="qtop" style="margin-bottom: 8px;">
+      <span class="pill">⏱️ <b id="ladTimer">35</b>秒</span>
+      <span class="pill" style="background: var(--accent);">🪜 爬升 <b id="ladHeight">0</b></span>
+      <span class="pill" style="background: var(--gold); color:#000;">🏅 <b id="ladScore">0</b></span>
+    </div>
+    <div class="card" style="position:relative; padding:14px;">
+      <p style="text-align:center;margin:0 0 10px;font-size:14px;color:#7f8c8d;font-weight:700;">心算出答案，点对的数字让小熊猫往上爬一级！答错或超时会<b>滑下一级</b>，越往上时间越短。</p>
+      <div class="ladWrap">
+        <div class="ladTrack" id="ladTrack"></div>
+        <div class="ladRight">
+          <div class="ladEq" id="ladEq">? + ? = ?</div>
+          <div class="ladBar"><i id="ladBar"></i></div>
+          <div class="ladChoices" id="ladChoices"></div>
+        </div>
+      </div>
+      <div id="ladResult" class="memResult"></div>
+    </div>
+    <div class="footnote" style="color:#a9c2f0; text-shadow:none;">算式与选项每局随机 · 每答对 3 题换 1 颗星（最多 8 颗）· 连击越长，额外奖励越多 · 每次都不一样</div>
+  </section>
+
   <!-- ===== 🏆 成就徽章 ===== -->
   <section id="badges" class="screen">
     <div class="hud">
@@ -593,7 +631,9 @@ const SYLLABUS = {
             {q:"一个数加上 1 250 等于 4 000，这个数是多少？", opts:["2 650","2 750","2 850","5 250"], a:1,
              why:["求加数：用和减去已知的加数。","4000 − 1250 = <b>2750</b>。"], tip:"加法逆运算是减法：和 − 一个加数 = 另一个加数。"},
             {q:"书店上午卖出 1 250 本书，下午比上午多卖 380 本，这一天一共卖出多少本？", opts:["2 880","2 500","2 630","3 130"], a:0,
-             why:["先求下午：1250 + 380 = 1630 本。","再求全天：上午 1250 + 下午 1630 = <b>2880</b> 本。"], tip:"两步应用题：先算出隐藏的数，再算最后的问题。"}
+             why:["先求下午：1250 + 380 = 1630 本。","再求全天：上午 1250 + 下午 1630 = <b>2880</b> 本。"], tip:"两步应用题：先算出隐藏的数，再算最后的问题。"},
+            {q:"275 + 168 = ?（注意进位）", opts:["433","443","343","453"], a:1,
+             why:["个位 5+8=13，写 3 进 1；十位 7+6+1=14，写 4 进 1；百位 2+1+1=4。","结果是 <b>443</b>（如图，两次进位）。"], tip:"连续进位时，每一位都别忘了把前一位进上来的 1 加进去。", fig:"col|275|168"}
           ]},
           multiply:{ name:"乘法", icon:"✖️", qs:[
             {q:"24 × 6 = ?", opts:["124","134","144","154"], a:2,
@@ -621,7 +661,9 @@ const SYLLABUS = {
             {q:"一辆车每 4 个人一组坐，要送 50 个人，至少需要安排几辆车？", opts:["12 辆","12 辆余 2 人","13 辆","14 辆"], a:2,
              why:["50 ÷ 4 = 12 组……余 2 人。","余下的 2 人也要坐车，所以要<b>多加一辆</b>：12 + 1 = <b>13 辆</b>。"], tip:"“至少要几个”这类题，有余数就要把商再加 1（进一法）。"},
             {q:"做一朵花要 5 颗珠子，现在有 53 颗珠子，<b>最多</b>能做几朵花？", opts:["10 朵","10 朵 余 3 颗","11 朵","12 朵"], a:0,
-             why:["53 ÷ 5 = 10 朵……余 3 颗。","“最多能做几朵”剩下的 3 颗<b>不够</b>再做一朵，要<b>去尾</b>，所以是 <b>10 朵</b>。"], tip:"“最多做几”用去尾法（舍去余数）；“至少要几”用进一法（商加 1），别弄反！"}
+             why:["53 ÷ 5 = 10 朵……余 3 颗。","“最多能做几朵”剩下的 3 颗<b>不够</b>再做一朵，要<b>去尾</b>，所以是 <b>10 朵</b>。"], tip:"“最多做几”用去尾法（舍去余数）；“至少要几”用进一法（商加 1），别弄反！"},
+            {q:"把 12 个苹果<b>平均分</b>给 3 个小朋友，每人分到几个？", opts:["3 个","4 个","5 个","6 个"], a:1,
+             why:["“平均分”就是除法：12 ÷ 3。","12 个分成 3 份，每份一样多（如图），每人 <b>4 个</b>。"], tip:"“平均分成几份、每份多少”用除法；分完没有剩就是整除。", fig:"grp|12|3"}
           ]},
           fraction:{ name:"分数", icon:"🍕", qs:[
             {q: "一个比萨切成 8 块，吃掉 3 块，吃掉了几分之几？", opts:["3/5","5/8","3/8","8/3"], a:2,
@@ -669,7 +711,9 @@ const SYLLABUS = {
             {q:"妈妈买了 3 包糖，每包 250 克。一共多少千克？", opts:["750 克（不到 1 千克）","0.75 千克","7.5 千克","75 克"], a:1,
              why:["先算总克数：3 × 250 = 750 克。","1000 克 = 1 千克，750 克 = <b>0.75 千克</b>（不足 1 千克）。"], tip:"克换千克要÷1000；750÷1000 = 0.75。"},
             {q:"一块木板用尺量得：左端在刻度 0，右端在刻度 8（厘米）。它的长度是？", opts:["8 厘米","0 厘米","16 厘米","9 厘米"], a:0,
-             why:["左端在 0，右端在 8，长度 = 8 − 0 = <b>8 厘米</b>。","左端正好对着 0 时，右端的刻度就是长度。"], tip:"读尺要看两端刻度差；左端是 0 时特别简单。", fig:"ruler|0|8"}
+             why:["左端在 0，右端在 8，长度 = 8 − 0 = <b>8 厘米</b>。","左端正好对着 0 时，右端的刻度就是长度。"], tip:"读尺要看两端刻度差；左端是 0 时特别简单。", fig:"ruler|0|8"},
+            {q:"一个西瓜重 2 500 克，一个木瓜重 2 千克 300 克。哪个更重？", opts:["西瓜","木瓜","一样重","无法比较"], a:0,
+             why:["先统一单位：木瓜 2 千克 300 克 = 2300 克。","比较 2500 克和 2300 克：2500 > 2300（如天平图，重的一端下沉）。","所以 <b>西瓜</b>更重。"], tip:"比轻重前一定要先换成同一个单位，再比数字大小。", fig:"balance|2500|2300|g"}
           ]}
         }
       },
@@ -857,7 +901,8 @@ const LEARN = {
   ],
   "std3.chinese.liangci": [
     {h:"什么是量词", p:"量词是表示数量单位的词，要和它修饰的事物搭配。说错量词，句子就不自然。"},
-    {h:"常见搭配", p:"能用手握住的器具多用“<b>把</b>”（一把钥匙、一把伞）；圆形小颗粒多用“<b>颗/粒</b>”（一颗珍珠、一粒米）。"}
+    {h:"常见搭配", p:"能用手握住的器具多用“<b>把</b>”（一把钥匙、一把伞）；圆形小颗粒多用“<b>颗/粒</b>”（一颗珍珠、一粒米）。",
+     eg:"一（　）剪刀？剪刀能用手握，所以用“<b>把</b>”——一<b>把</b>剪刀。"}
   ],
   "std3.chinese.chengyu": [
     {h:"成语藏故事", p:"很多成语来自寓言故事，记住故事就懂意思。“守株待兔”讲农夫等撞死的兔子，比喻<b>妄想不劳而获</b>。"},
@@ -865,14 +910,16 @@ const LEARN = {
   ],
   "std3.chinese.grammar": [
     {h:"关联词连句子", p:"关联词把两句话连起来，表示它们的关系。"},
-    {h:"分清关系", p:"假设用“<b>如果……就……</b>”；递进（更进一步）用“<b>不但……而且……</b>”；因果用“因为……所以……”。"}
+    {h:"分清关系", p:"假设用“<b>如果……就……</b>”；递进（更进一步）用“<b>不但……而且……</b>”；因果用“因为……所以……”。",
+     eg:"“（　）明天不下雨，我们（　）去爬山。”——这是<b>假设</b>，填“<b>如果……就……</b>”。"}
   ],
   "std3.science.teeth": [
     {h:"两套牙齿", p:"人一生有两副牙：小时候的<b>乳牙</b>会脱落，换上陪伴一生的<b>恒牙</b>。"},
     {h:"牙齿的分工", p:"<b>门齿</b>切断食物、<b>犬齿</b>撕裂食物、<b>臼齿</b>磨碎食物。"}
   ],
   "std3.science.diet": [
-    {h:"动物的食性", p:"只吃肉的是<b>肉食性</b>（狮子、老虎）；只吃植物的是<b>草食性</b>（牛、兔）；又吃肉又吃植物的是<b>杂食性</b>（鸡、熊、人）。"}
+    {h:"动物的食性", p:"只吃肉的是<b>肉食性</b>（狮子、老虎）；只吃植物的是<b>草食性</b>（牛、兔）；又吃肉又吃植物的是<b>杂食性</b>（鸡、熊、人）。",
+     steps:["看这种动物<b>平常吃什么</b>。","只吃肉 → 肉食性；只吃植物 → 草食性。","既吃肉又吃植物 → <b>杂食性</b>。"]}
   ],
   "std3.science.magnet": [
     {h:"磁极规律", p:"磁铁有 N、S 两极：<b>同极相斥，异极相吸</b>。", fig:"magnet"},
@@ -884,7 +931,8 @@ const LEARN = {
   ],
   "std3.bm.penjodoh": [
     {h:"Penjodoh Bilangan", p:"Penjodoh bilangan digunakan bersama nombor untuk benda tertentu."},
-    {h:"Contoh", p:"Pisang sebaris = <b>sikat/sisir</b>; benda berpasangan kiri-kanan (subang, kasut) = <b>pasang</b>."}
+    {h:"Contoh", p:"Pisang sebaris = <b>sikat/sisir</b>; benda berpasangan kiri-kanan (subang, kasut) = <b>pasang</b>.",
+     eg:"Dua (　) kasut? Kasut berpasangan kiri-kanan, jadi guna <b>pasang</b> — dua <b>pasang</b> kasut."}
   ],
   "std3.english.grammar": [
     {h:"Subject–Verb Agreement", p:"Singular subject + verb with <b>-s</b> (She does). Plural subject + verb <b>without -s</b> (The boys play)."}
@@ -901,8 +949,10 @@ const LEARN = {
      eg:"凑整 36 472 到万：要凑到万就看千位 6，6 ≥ 5 进一，万位 3 → 4，后面写 0，得 <b>40 000</b>。"}
   ],
   "std4.math.addsub": [
-    {h:"竖式加减", p:"对齐数位，<b>满十进一</b>，减法<b>不够减就向前借一</b>。"},
-    {h:"逆运算", p:"加法和减法互为逆运算：和 − 一个加数 = 另一个加数。求未知数很好用。"}
+    {h:"竖式加减", p:"对齐数位，<b>满十进一</b>，减法<b>不够减就向前借一</b>。", fig:"col|275|168",
+     steps:["把两个数<b>右对齐</b>写好（个位对个位、十位对十位）。","从<b>个位</b>开始一位一位加。","某一位<b>满十就向前一位进 1</b>（上图红色的 1 就是进位）。"]},
+    {h:"逆运算", p:"加法和减法互为逆运算：和 − 一个加数 = 另一个加数。求未知数很好用。",
+     eg:"□ + 26 = 80，求 □。用和减去已知加数：80 − 26 = <b>54</b>。"}
   ],
   "std4.math.multiply": [
     {h:"竖式乘法", p:"先乘个位再乘十位，<b>别忘了加进位</b>。"},
@@ -912,7 +962,7 @@ const LEARN = {
      eg:"24 × 36 = 24×30 + 24×6 = 720 + 144 = <b>864</b>。"}
   ],
   "std4.math.divide": [
-    {h:"除法的意义", p:"把总数<b>平均分</b>成若干份。可用乘法口诀去试商。"},
+    {h:"除法的意义", p:"把总数<b>平均分</b>成若干份，每份一样多。可用乘法口诀去试商。", fig:"grp|12|3"},
     {h:"余数规则", p:"<b>余数一定要比除数小</b>。验算：商 × 除数 + 余数 = 被除数。",
      steps:["用乘法口诀找：除数乘几最接近被除数又<b>不超过</b>它，那个“几”就是商。","被除数 − （商 × 除数）= 余数。","检查余数是不是<b>比除数小</b>；不小就说明商取小了。"],
      eg:"45 ÷ 7：7×6=42 最接近且不超过 45，商是 6；45−42=3，余 3（3 < 7 正确），所以是 <b>6 余 3</b>。"}
@@ -938,7 +988,7 @@ const LEARN = {
   ],
   "std4.math.measure": [
     {h:"长度", p:"<b>1 米 = 100 厘米</b>；1 千米 = 1000 米。", fig:"ruler|0|6"},
-    {h:"质量", p:"<b>1 千克(kg) = 1000 克(g)</b>。2 kg 500 g = 2500 g。"},
+    {h:"质量", p:"<b>1 千克(kg) = 1000 克(g)</b>。2 kg 500 g = 2500 g。比轻重要先<b>换成同一个单位</b>再比。", fig:"balance|2500|2300|g"},
     {h:"加减前先统一单位", p:"单位不同<b>不能直接加减</b>！要先换成<b>同一个单位</b>。如 3 米 25 厘米 − 150 厘米，先把米换成厘米（325 厘米）再减。",
      steps:["把所有数量换成<b>同一个单位</b>（通常换成小单位）。","按要求做加法或减法。","看清楚题目要的是哪个单位，再写答案。"],
      eg:"3 米 25 厘米 − 150 厘米：3 米 25 厘米 = 325 厘米；325 − 150 = <b>175 厘米</b>。"}
@@ -1088,6 +1138,50 @@ function figRuler(start,end,unit){ start=+start; end=+end; unit=unit||"cm";
   g+=`<text x="${X+(start+end)/2*step}" y="${y-20}" font-size="13" font-weight="800" text-anchor="middle" fill="#2c3e50">${end-start} ${unit}</text>`;
   return svgWrap(86,g,`从 ${start} 量到 ${end}：长度 = ${end} − ${start} = ${end-start} ${unit}`);
 }
+// 竖式加法：对齐数位、标出进位（红色 1），帮孩子看懂“满十进一”
+function figCol(a,b){ a=+a; b=+b; const s=a+b;
+  const A=String(a), B=String(b), S=String(s), cw=30, xr=215;
+  const cx=i=>xr-i*cw;
+  const place=(str,y,fill)=>{ let g=""; for(let i=0;i<str.length;i++){
+    g+=`<text x="${cx(i)}" y="${y}" font-size="26" font-weight="800" text-anchor="middle" fill="${fill}">${str[str.length-1-i]}</text>`; } return g; };
+  let g="", c=0, ml=Math.max(A.length,B.length);
+  for(let i=0;i<ml;i++){ const da=+(A[A.length-1-i]||0), db=+(B[B.length-1-i]||0), sum=da+db+c; c=sum>=10?1:0;
+    if(c) g+=`<text x="${cx(i+1)}" y="16" font-size="13" font-weight="800" text-anchor="middle" fill="#e74c3c">1</text>`; }
+  g+=place(A,46,"#2c3e50")+place(B,74,"#2c3e50");
+  g+=`<text x="${cx(ml)-4}" y="74" font-size="24" font-weight="800" text-anchor="middle" fill="#2c3e50">+</text>`;
+  g+=`<line x1="${cx(S.length-1)-18}" y1="84" x2="${xr+16}" y2="84" stroke="#2c3e50" stroke-width="2"/>`;
+  g+=place(S,110,"#27ae60");
+  return svgWrap(122,g,`${a} + ${b} = ${s}（个位满十，向前一位进 1——红色就是进位）`);
+}
+// 平均分图：把总数平均分进若干份，直观看懂除法（每份几个、有没有余）
+function figGrp(total,groups){ total=+total; groups=+groups;
+  const per=Math.floor(total/groups), rem=total-per*groups;
+  const G=Math.min(groups,6), gap=8, x0=12, bw=(296-gap*(G-1))/G, by=14, bh=58;
+  let g="";
+  for(let k=0;k<G;k++){ const bx=x0+k*(bw+gap);
+    g+=`<rect x="${bx}" y="${by}" width="${bw}" height="${bh}" rx="8" fill="#eafaf1" stroke="#27ae60" stroke-width="2"/>`;
+    const dc=Math.max(1,Math.floor((bw-8)/12));
+    for(let d=0; d<per; d++){ const dx=bx+9+(d%dc)*12, dy=by+13+Math.floor(d/dc)*12;
+      if(dy<by+bh-5) g+=`<circle cx="${dx}" cy="${dy}" r="4" fill="#27ae60"/>`; }
+  }
+  return svgWrap(84,g,`${total} ÷ ${groups} = ${per}${rem?` 余 ${rem}`:""}（平均分成 ${groups} 份，每份 ${per} 个）`);
+}
+// 天平：比较两边轻重，重的一端往下沉，帮孩子理解质量比较
+function figBalance(left,right,unit){ left=+left; right=+right; unit=unit||"g";
+  const cx=160, postTop=30, fy=104, half=104, dn=12;
+  const lY=postTop+(left>right?dn:left<right?-dn:0), rY=postTop+(right>left?dn:right<left?-dn:0);
+  const lx=cx-half, rx=cx+half;
+  let g=`<line x1="${cx}" y1="${postTop}" x2="${cx}" y2="${fy}" stroke="#7f8c8d" stroke-width="4"/>`;
+  g+=`<polygon points="${cx-14},${fy} ${cx+14},${fy} ${cx},${fy-22}" fill="#95a5a6"/>`;
+  g+=`<rect x="${cx-32}" y="${fy}" width="64" height="6" rx="3" fill="#7f8c8d"/>`;
+  g+=`<line x1="${lx}" y1="${lY}" x2="${rx}" y2="${rY}" stroke="#34495e" stroke-width="5" stroke-linecap="round"/>`;
+  const pan=(x,y,val,col)=>`<line x1="${x}" y1="${y}" x2="${x}" y2="${y+22}" stroke="#7f8c8d" stroke-width="2"/>`
+    +`<path d="M ${x-24} ${y+22} Q ${x} ${y+40} ${x+24} ${y+22}" fill="${col}" stroke="#5d6d7e" stroke-width="2"/>`
+    +`<text x="${x}" y="${y+58}" font-size="14" font-weight="800" text-anchor="middle" fill="#2c3e50">${val} ${unit}</text>`;
+  g+=pan(lx,lY,left,"#aed6f1")+pan(rx,rY,right,"#a9dfbf");
+  const cmp=left>right?"左边更重":left<right?"右边更重":"两边一样重";
+  return svgWrap(168,g,`${left} ${unit} ${left>right?">":left<right?"<":"="} ${right} ${unit} —— ${cmp}（重的一端往下沉）`);
+}
 function FIG(spec){
   const p=String(spec).split("|"), t=p[0];
   if(t==="pv") return figPV(p[1]);
@@ -1098,6 +1192,9 @@ function FIG(spec){
   if(t==="magnet") return figMagnet();
   if(t==="states") return figStates();
   if(t==="ruler") return figRuler(p[1],p[2],p[3]);
+  if(t==="col") return figCol(p[1],p[2]);
+  if(t==="grp") return figGrp(p[1],p[2]);
+  if(t==="balance") return figBalance(p[1],p[2],p[3]);
   return "";
 }
 
@@ -1352,9 +1449,10 @@ const BADGES = [
   {id:"streak8",   icon:"🔥", name:"连对达人", desc:"一次闯关中连续答对 8 题。"},
   {id:"subjClear", icon:"📚", name:"科目通",   desc:"通关某一科目的全部单元。"},
   {id:"wrongZero", icon:"🎯", name:"零错题",   desc:"把错题本里的题目全部攻克清空。"},
-  {id:"gamer",     icon:"🎮", name:"游戏全能", desc:"玩遍全部 7 款奖励小游戏。"},
+  {id:"gamer",     icon:"🎮", name:"游戏全能", desc:"玩遍全部 8 款奖励小游戏。"},
   {id:"bonusAce",  icon:"🚀", name:"奖励猎手", desc:"在一局奖励游戏里拿下 6 颗以上星星。"},
   {id:"challengeMaster", icon:"⏱️", name:"限时高手", desc:"在限时挑战模式里全部答对通关一次。"},
+  {id:"climber",   icon:"🧗", name:"登顶高手", desc:"在快算阶梯里一局答对 15 题以上。"},
   {id:"stars120",  icon:"🏆", name:"传奇学者", desc:"累计获得 120 颗星星。"}
 ];
 
@@ -1380,9 +1478,10 @@ function checkBadges(ctx){
     }
   }
   if(ctx.wrongCleared && save.wrong.length===0) award("wrongZero");
-  if(Object.keys(save.bonusPlayed||{}).length>=7) award("gamer");
+  if(Object.keys(save.bonusPlayed||{}).length>=8) award("gamer");
   if((ctx.bonusStars||0)>=6) award("bonusAce");
   if(ctx.challengePerfect) award("challengeMaster");
+  if((ctx.ladderClimb||0)>=15) award("climber");
 
   if(newly.length){ persist(); refreshHud(); showBadgeToast(newly); }
   return newly;
@@ -1976,13 +2075,15 @@ $("rReplay").onclick=()=> { if(reviewMode) startReview(); else startQuiz(curSubj
 $("rBack").onclick=()=> { if(reviewMode){ reviewMode=false; renderHome(); show("home"); } else { openSubject(curSubj); } };
 $("rGameBtn").onclick=()=> {
   // 每次随机选择不同的奖励游戏，玩法不重复（避免连续两次相同）
-  const modes = ['collect', 'mathmeteor', 'plane', 'tank', 'memory', 'simon', 'mole'];
+  const modes = ['collect', 'mathmeteor', 'plane', 'tank', 'memory', 'simon', 'mole', 'ladder'];
   let pick;
   do { pick = modes[Math.floor(Math.random() * modes.length)]; }
   while (pick === save.lastBonus && Math.random() < 0.85);
   save.lastBonus = pick; persist();
 
-  if (pick === 'simon') {
+  if (pick === 'ladder') {
+    initLadder();
+  } else if (pick === 'simon') {
     initSimon();
   } else if (pick === 'mole') {
     initMole();
@@ -3002,6 +3103,115 @@ function endMole(){
     `<p style="font-size:13px;color:#bbb;margin:6px 0;">每 3 分换 1 颗星${comboBonus>0?`　连击奖励 +${comboBonus} ⭐`:""}（最多 8 颗）· 积分 +${moleScore*10}</p>`;
   if(earned>=4){ burst(); Sound.playSfx("fanfare"); }
   setTimeout(()=>{ $("moleResult").style.display="none"; openSubject(curSubj); }, 3400);
+}
+
+/* ============================================================
+   🪜 快算阶梯 — 第 8 款奖励游戏
+   顶部出现算式，点对的答案让小熊猫往上爬一级；答错或超时滑下一级。
+   越往上爬，每题倒计时越短（越来越难）。算式与选项每局随机——每次都不一样。
+   ============================================================ */
+const LAD_VIS=8;
+let ladHeight=0, ladScore=0, ladCombo=0, ladComboBest=0, ladOver=false;
+let ladLeft=0, ladTotalClock=null, ladQTO=null, ladAns=0, ladBusy=false;
+
+function initLadder(){
+  ladHeight=0; ladScore=0; ladCombo=0; ladComboBest=0; ladOver=false; ladBusy=false; ladLeft=35;
+  $("ladHeight").textContent="0"; $("ladScore").textContent="0"; $("ladTimer").textContent="35";
+  $("ladResult").style.display="none";
+  ladBuildTrack();
+  show("ladder-screen");
+  Sound.playSfx("fanfare");
+  ladTotalClock=setInterval(()=>{
+    ladLeft--; $("ladTimer").textContent=Math.max(0,ladLeft);
+    if(ladLeft<=0) endLadder();
+  }, 1000);
+  ladNext();
+}
+
+function ladBuildTrack(){
+  let h="";
+  for(let i=1;i<LAD_VIS;i++){ h+=`<div class="rung" style="bottom:${(i/LAD_VIS*86+7).toFixed(1)}%"></div>`; }
+  h+=`<div class="goal" id="ladGoal">🏁 1F</div><div class="ladPanda" id="ladPanda" style="bottom:4%">🐼</div>`;
+  $("ladTrack").innerHTML=h;
+}
+
+function ladPos(){
+  const vis=ladHeight%LAD_VIS, floor=Math.floor(ladHeight/LAD_VIS)+1;
+  const p=$("ladPanda"); if(p) p.style.bottom=(vis/LAD_VIS*86+4).toFixed(1)+"%";
+  const gl=$("ladGoal"); if(gl) gl.textContent="🏁 "+floor+"F";
+}
+
+function ladNext(){
+  if(ladOver) return;
+  ladBusy=false;
+  const eq=genEq(); ladAns=eq.ans;
+  const choices=shuffle([ladAns, ...moleDistractors(ladAns,2)]);
+  $("ladEq").textContent=eq.text;
+  const box=$("ladChoices"); box.innerHTML="";
+  choices.forEach(v=>{
+    const b=document.createElement("button");
+    b.className="ladChoice"; b.textContent=v;
+    b.onclick=()=>ladPick(v,b);
+    box.appendChild(b);
+  });
+  // 每题倒计时随高度缩短（越往上越难）
+  const qSec=Math.max(2.2, 4.8 - ladHeight*0.16);
+  const bar=$("ladBar");
+  bar.style.transition="none"; bar.style.width="100%"; void bar.offsetWidth;
+  bar.style.transition=`width ${qSec}s linear`; bar.style.width="0%";
+  clearTimeout(ladQTO);
+  ladQTO=setTimeout(ladTimeout, qSec*1000);
+}
+
+function ladPick(val,btn){
+  if(ladOver||ladBusy) return;
+  ladBusy=true; clearTimeout(ladQTO);
+  if(val===ladAns){
+    btn.classList.add("ok");
+    ladScore++; ladHeight++; ladCombo++; ladComboBest=Math.max(ladComboBest,ladCombo);
+    $("ladScore").textContent=ladScore; $("ladHeight").textContent=ladHeight;
+    Sound.tone(420+(ladHeight%LAD_VIS)*40, 0.18, 'triangle');
+    popEmoji("⬆️ +1"+(ladCombo>=3?` 🔥x${ladCombo}`:""));
+    ladPos();
+    setTimeout(ladNext, 380);
+  } else {
+    btn.classList.add("no");
+    [...$("ladChoices").children].forEach(c=>{ if(+c.textContent===ladAns) c.classList.add("ok"); });
+    ladCombo=0; ladHeight=Math.max(0,ladHeight-1); $("ladHeight").textContent=ladHeight;
+    Sound.playSfx("wrong"); popEmoji("⬇️ 滑落"); ladPos();
+    setTimeout(ladNext, 760);
+  }
+}
+
+function ladTimeout(){
+  if(ladOver||ladBusy) return;
+  ladBusy=true;
+  ladCombo=0; ladHeight=Math.max(0,ladHeight-1); $("ladHeight").textContent=ladHeight;
+  [...$("ladChoices").children].forEach(c=>{ if(+c.textContent===ladAns) c.classList.add("ok"); });
+  Sound.playSfx("wrong"); popEmoji("⏰ 超时滑落"); ladPos();
+  setTimeout(ladNext, 760);
+}
+
+function endLadder(){
+  ladOver=true;
+  if(ladTotalClock){ clearInterval(ladTotalClock); ladTotalClock=null; }
+  clearTimeout(ladQTO);
+  const comboBonus = ladComboBest>=9 ? 2 : ladComboBest>=6 ? 1 : 0;   // 连击越长额外送星
+  const earned=Math.min(8, Math.floor(ladScore/3) + comboBonus);       // 每答对 3 题换 1 颗星（更难拿）
+  save.stars+=earned; save.points+=ladScore*10;
+  save.bonusPlayed["ladder"]=true;
+  persist(); refreshHud();
+  checkBadges({bonusStars:earned, ladderClimb:ladScore});
+
+  $("ladTimer").textContent="0";
+  $("ladResult").style.display="flex";
+  $("ladResult").innerHTML =
+    `<h2 style="color:var(--gold);margin:0 0 8px;">🏁 快算阶梯结束</h2>`+
+    `<p style="margin:4px 0;">答对 <b>${ladScore}</b> 题 · 最高连击 🔥 <b>${ladComboBest}</b></p>`+
+    `<p style="color:var(--gold);font-weight:800;font-size:20px;margin:8px 0;">${earned>0?`获得 ${earned} 颗额外星星 ⭐`:"再爬高一点就能拿星啦！"}</p>`+
+    `<p style="font-size:13px;color:#bbb;margin:6px 0;">每答对 3 题换 1 颗星${comboBonus>0?`　连击奖励 +${comboBonus} ⭐`:""}（最多 8 颗）· 积分 +${ladScore*10}</p>`;
+  if(earned>=4){ burst(); Sound.playSfx("fanfare"); }
+  setTimeout(()=>{ $("ladResult").style.display="none"; openSubject(curSubj); }, 3600);
 }
 
 // Run Grade Screen by default
